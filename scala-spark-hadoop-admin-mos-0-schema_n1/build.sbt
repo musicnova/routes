@@ -11,6 +11,7 @@ lazy val dependencies = Seq(
   sparkCore % "provided",
   sparkSql % "provided",
   hadoopClient % "provided",
+  openCsv, // % "provided",
   configurator
 )
 
