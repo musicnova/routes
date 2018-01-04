@@ -113,6 +113,82 @@ object Edwex extends Serializable {
     result
   }
 
+  def taskAll(): String = {
+    // https://github.com/tototoshi/scala-csv
+    // https://www.programcreek.com/scala/java.io.ByteArrayOutputStream
+    import com.github.tototoshi.csv.CSVWriter
+    import java.io.ByteArrayOutputStream
+    val stream = new ByteArrayOutputStream()
+    val writer = CSVWriter.open(stream)
+
+    writer.writeRow(Seq("(1) Номер ФТЗ", "(2) Наименование региона",
+      "(3) Параметр (группа показателей, связанных первичным ключом)",
+      "(4) Сложность (1 - существующий аттрибут, 2 - простой SQL, 3 - сложный SQL, 4 - machine learning)",
+      "(5) Аттрибут таблицы источника",
+      "(6) Система источник", "(7) Код источника", "(8) Назнание таблицы в источнике", "(9) Название таблицы в КХД",
+      "(10) Логика", "(11) Комментарий"))
+    // 1 to 57
+    writer.writeRow(Seq("1", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("2", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("3", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("4", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("5", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("6", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("7", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("8", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("9", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("10", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("11", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("12", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("13", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("14", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("15", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("16", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("17", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("18", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("19", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("20", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("21", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("22", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("23", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("24", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("25", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("26", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("27", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("28", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("29", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("30", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("31", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("32", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("33", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("34", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("35", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("36", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("37", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("38", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("39", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("40", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("41", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("42", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("43", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("44", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("45", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("46", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("47", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("48", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("49", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("50", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("51", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("52", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("53", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("54", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("55", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("56", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    writer.writeRow(Seq("57", "", "FIRST", "4", "unknown", "public", "000001", "table", "dev_table", "_", "-"))
+    val result = stream.toString("UTF-8")
+    result
+  }
+
   def main(args: Array[String]): Unit = {
     import com.github.tototoshi.csv.DefaultCSVFormat
     implicit object MyFormat extends DefaultCSVFormat {
@@ -121,5 +197,6 @@ object Edwex extends Serializable {
     }
     writeToFile("/home/user/CODE/access.csv", accessAll())
     writeToFile("/home/user/CODE/edwex.csv", edwexAll())
+    writeToFile("/home/user/CODE/task.csv", taskAll())
   }
 }

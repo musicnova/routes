@@ -5,7 +5,10 @@ object Dependencies {
   lazy val sparkVersion = "2.0.0"
   lazy val hadoopVersion = "2.7.3"
   lazy val opencsvVersion = "1.3.5"
+  lazy val log4jVersion = "1.6.4"
 
+  lazy val log4jApi = "org.slf4j" % "slf4j-api" % log4jVersion
+  lazy val log4jCore = "org.slf4j" % "slf4j-log4j12" % log4jVersion
   lazy val openCsv = "com.github.tototoshi" %% "scala-csv" % opencsvVersion
   lazy val sparkCore = "org.apache.spark" %% "spark-core" % sparkVersion
   lazy val sparkSql = "org.apache.spark" %% "spark-sql" % sparkVersion

@@ -8,10 +8,12 @@ lazy val general = Seq(
 )
 
 lazy val dependencies = Seq(
+  log4jApi,
+  log4jCore,
   sparkCore % "provided",
   sparkSql % "provided",
   hadoopClient % "provided",
-  openCsv, // % "provided",
+  openCsv, //% "provided",
   configurator
 )
 
