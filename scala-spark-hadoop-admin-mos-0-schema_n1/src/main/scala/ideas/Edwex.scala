@@ -13,6 +13,12 @@ object Edwex extends Serializable {
     using(new PrintWriter(new FileWriter(path, true)))(_.println(data))
 
   def accessAll(): String = {
+    import com.github.tototoshi.csv.DefaultCSVFormat
+    implicit object MyFormat extends DefaultCSVFormat {
+      override val delimiter = '\t'
+      override val lineTerminator = "\n"
+    }
+
     val runcmd = "=CONCATENATE(\"run -srctp=001 -srcno=\";D5;\" -specver=C " +
       "-dbcs=jdbc:oracleI5:thin:@<имя/IP-адрес сервера БД>:<port>:<alias> -dbuser=<имя>" +
       " -dbpass=<пароль>\";\" -svncs=http://<имя/IP-адрес SVN-сервера> -svnuser=<имя>" +
@@ -53,67 +59,126 @@ object Edwex extends Serializable {
   }
 
   def edwexAll(): String = {
+    import com.github.tototoshi.csv.DefaultCSVFormat
+    implicit object MyFormat extends DefaultCSVFormat {
+      override val delimiter = '\t'
+      override val lineTerminator = "\n"
+    }
+
     // https://github.com/tototoshi/scala-csv
     // https://www.programcreek.com/scala/java.io.ByteArrayOutputStream
     import com.github.tototoshi.csv.CSVWriter
     import java.io.ByteArrayOutputStream
     val stream = new ByteArrayOutputStream()
     val writer = CSVWriter.open(stream)
-    writer.writeRow(Seq("1", "1", "METRO_GEO2", "LINE", "VARCHAR65535"))
-    writer.writeRow(Seq("1", "2", "METRO_GEO2", "LINECOLOR", "VARCHAR65535"))
-    writer.writeRow(Seq("1", "3", "METRO_GEO2", "NAME", "VARCHAR65535"))
-    writer.writeRow(Seq("1", "4", "METRO_GEO2", "LATITUDE", "NUMERIC"))
-    writer.writeRow(Seq("1", "5", "METRO_GEO2", "LONGITUDE", "NUMERIC"))
-    writer.writeRow(Seq("1", "6", "METRO_GEO2", "ORDER", "NUMERIC"))
+    writer.writeRow(Seq("1", "1", "METRO_GEO2", "LINE", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("1", "2", "METRO_GEO2", "LINECOLOR", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("1", "3", "METRO_GEO2", "NAME", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("1", "4", "METRO_GEO2", "LATITUDE", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("1", "5", "METRO_GEO2", "LONGITUDE", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("1", "6", "METRO_GEO2", "ORDER", "NUMERIC", "n/c"))
 
-    writer.writeRow(Seq("2", "1", "MAXIMA_20170615", "LINE_NUMBER", "NUMERIC"))
-    writer.writeRow(Seq("2", "2", "MAXIMA_20170615", "STATION_NUMBER_ABS", "NUMERIC"))
-    writer.writeRow(Seq("2", "3", "MAXIMA_20170615", "STATION_NAME_LONG_RU", "VARCHAR65535"))
-    writer.writeRow(Seq("2", "4", "MAXIMA_20170615", "STATION_NAME_LONG_EN", "VARCHAR65535"))
+    writer.writeRow(Seq("2", "1", "MAXIMA_V20170615", "LINE_NUMBER", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("2", "2", "MAXIMA_V20170615", "STATION_NUMBER_ABS", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("2", "3", "MAXIMA_V20170615", "STATION_NAME_LONG_RU", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("2", "4", "MAXIMA_V20170615", "STATION_NAME_LONG_EN", "VARCHAR65535", "n/c"))
 
-    writer.writeRow(Seq("3", "1", "DATA_LINE_CODES_20171224", "LINE", "VARCHAR65535"))
-    writer.writeRow(Seq("3", "2", "DATA_LINE_CODES_20171224", "ID", "NUMERIC"))
-    writer.writeRow(Seq("3", "3", "DATA_LINE_CODES_20171224", "GLOBAL_ID", "NUMERIC"))
-    writer.writeRow(Seq("3", "4", "DATA_LINE_CODES_20171224", "STATUS", "VARCHAR65535"))
+    writer.writeRow(Seq("3", "1", "DATA_LINE_CODES_V20171224", "LINE", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("3", "2", "DATA_LINE_CODES_V20171224", "ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("3", "3", "DATA_LINE_CODES_V20171224", "GLOBAL_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("3", "4", "DATA_LINE_CODES_V20171224", "STATUS", "VARCHAR65535", "n/c"))
 
-    writer.writeRow(Seq("4", "1", "DATA_STATION_CODES_20171224", "STATION", "VARCHAR65535"))
-    writer.writeRow(Seq("4", "2", "DATA_STATION_CODES_20171224", "LINE", "VARCHAR65535"))
-    writer.writeRow(Seq("4", "3", "DATA_STATION_CODES_20171224", "ADMAREA", "VARCHAR65535"))
-    writer.writeRow(Seq("4", "4", "DATA_STATION_CODES_20171224", "GLOBAL_ID", "NUMERIC"))
-    writer.writeRow(Seq("4", "5", "DATA_STATION_CODES_20171224", "DISTRICT", "VARCHAR65535"))
-    writer.writeRow(Seq("4", "6", "DATA_STATION_CODES_20171224", "STATUS", "VARCHAR65535"))
-    writer.writeRow(Seq("4", "7", "DATA_STATION_CODES_20171224", "ID", "NUMERIC"))
+    writer.writeRow(Seq("4", "1", "DATA_STATION_CODES_V20171224", "STATION", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("4", "2", "DATA_STATION_CODES_V20171224", "LINE", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("4", "3", "DATA_STATION_CODES_V20171224", "ADMAREA", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("4", "4", "DATA_STATION_CODES_V20171224", "GLOBAL_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("4", "5", "DATA_STATION_CODES_V20171224", "DISTRICT", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("4", "6", "DATA_STATION_CODES_V20171224", "STATUS", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("4", "7", "DATA_STATION_CODES_V20171224", "ID", "NUMERIC", "n/c"))
 
-    writer.writeRow(Seq("5", "1", "DATA_ENTRANCE_STATION_CODES_20171219", "lokal_nyj_identifikator", "VARCHAR65535"))
-    writer.writeRow(Seq("5", "2", "DATA_ENTRANCE_STATION_CODES_20171219", "naimenovanie", "NUMERIC"))
-    writer.writeRow(Seq("5", "3", "DATA_ENTRANCE_STATION_CODES_20171219", "dolgota_v_wgs_84", "NUMERIC"))
-    writer.writeRow(Seq("5", "4", "DATA_ENTRANCE_STATION_CODES_20171219", "shirota_v_wgs_84", "VARCHAR65535"))
-    writer.writeRow(Seq("5", "5", "DATA_ENTRANCE_STATION_CODES_20171219", "liniya", "VARCHAR65535"))
-    writer.writeRow(Seq("5", "6", "DATA_ENTRANCE_STATION_CODES_20171219", "rezhim_raboty_po_chyotnym_dnyam", "NUMERIC"))
-    writer.writeRow(Seq("5", "7", "DATA_ENTRANCE_STATION_CODES_20171219", "rezhim_raboty_po_nechyotnym_dnyam", "NUMERIC"))
-    writer.writeRow(Seq("5", "8", "DATA_ENTRANCE_STATION_CODES_20171219", "kolichestvo_polnofunkcional_nyh_bpa_vse_tipy_biletov", "VARCHAR65535"))
-    writer.writeRow(Seq("5", "9", "DATA_ENTRANCE_STATION_CODES_20171219", "kolichestvo_malofunkcional_nyh_bpa__bilety_na_1_i_2_poezdki", "NUMERIC"))
-    writer.writeRow(Seq("5", "10", "DATA_ENTRANCE_STATION_CODES_20171219", "obshchee_kolichestvo_bpa", "NUMERIC"))
-    writer.writeRow(Seq("5", "11", "DATA_ENTRANCE_STATION_CODES_20171219", "remont_ehskalatorov", "VARCHAR65535"))
-    writer.writeRow(Seq("5", "12", "DATA_ENTRANCE_STATION_CODES_20171219", "global_id", "NUMERIC"))
-    writer.writeRow(Seq("5", "13", "DATA_ENTRANCE_STATION_CODES_20171219", "geodannye", "VARCHAR65535"))
+    writer.writeRow(Seq("5", "1", "DATA_ENTRANCE_STATION_CODES_V20171219", "LOCAL_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("5", "2", "DATA_ENTRANCE_STATION_CODES_V20171219", "NAME", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("5", "3", "DATA_ENTRANCE_STATION_CODES_V20171219", "LAT_WGS_84", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("5", "4", "DATA_ENTRANCE_STATION_CODES_V20171219", "LONG_WGS_84", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("5", "5", "DATA_ENTRANCE_STATION_CODES_V20171219", "STATION", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("5", "6", "DATA_ENTRANCE_STATION_CODES_V20171219", "LINE", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("5", "7", "DATA_ENTRANCE_STATION_CODES_V20171219", "EVEN_DAY_HOURS", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("5", "8", "DATA_ENTRANCE_STATION_CODES_V20171219", "ODD_DAY_HOURS", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("5", "9", "DATA_ENTRANCE_STATION_CODES_V20171219", "N_BPA_UNIVERSAL", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("5", "10", "DATA_ENTRANCE_STATION_CODES_V20171219", "N_BPA_1_2_ONLY", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("5", "11", "DATA_ENTRANCE_STATION_CODES_V20171219", "N_BPA_TOTAL", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("5", "12", "DATA_ENTRANCE_STATION_CODES_V20171219", "REPAIR_INFO", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("5", "13", "DATA_ENTRANCE_STATION_CODES_V20171219", "GLOBAL_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("5", "14", "DATA_ENTRANCE_STATION_CODES_V20171219", "GEO_DATA", "VARCHAR65535", "n/c"))
 
-    writer.writeRow(Seq("3", "1", "LINE_CODES_CSV", "COLOR", "VARCHAR65535"))
-    writer.writeRow(Seq("3", "2", "LINE_CODES_CSV", "LINE_ID", "NUMERIC"))
-    writer.writeRow(Seq("3", "3", "LINE_CODES_CSV", "NAME", "VARCHAR65535"))
-    writer.writeRow(Seq("4", "1", "STATION_CODES_CSV", "LABEL_ID", "NUMERIC"))
-    writer.writeRow(Seq("4", "2", "STATION_CODES_CSV", "LINE_ID", "NUMERIC"))
-    writer.writeRow(Seq("4", "3", "STATION_CODES_CSV", "LINK_ID", "NUMERIC"))
-    writer.writeRow(Seq("4", "4", "STATION_CODES_CSV", "NAME", "VARCHAR65535"))
-    writer.writeRow(Seq("4", "5", "STATION_CODES_CSV", "STATION_ID", "NUMERIC"))
-    writer.writeRow(Seq("5", "1", "ENTRANCE_STATION_CODES_CSV", "ENTRANCE_ID", "NUMERIC"))
-    writer.writeRow(Seq("5", "2", "ENTRANCE_STATION_CODES_CSV", "LINE_NAME", "NUMERIC"))
-    writer.writeRow(Seq("5", "3", "ENTRANCE_STATION_CODES_CSV", "STATION_NAME", "NUMERIC"))
+    writer.writeRow(Seq("6", "1", "DATA_PARKING_CODES_V20171220", "ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("6", "2", "DATA_PARKING_CODES_V20171220", "PARKING_NAME", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("6", "3", "DATA_PARKING_CODES_V20171220", "METRO_STATION", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("6", "4", "DATA_PARKING_CODES_V20171220", "GLOBAL_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("6", "5", "DATA_PARKING_CODES_V20171220", "METRO_LINE", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("6", "6", "DATA_PARKING_CODES_V20171220", "ADM_AREA", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("6", "7", "DATA_PARKING_CODES_V20171220", "DISTRICT", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("6", "8", "DATA_PARKING_CODES_V20171220", "LOCATION", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("6", "9", "DATA_PARKING_CODES_V20171220", "SCHEDULE", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("6", "10", "DATA_PARKING_CODES_V20171220", "ORG_PHONE", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("6", "11", "DATA_PARKING_CODES_V20171220", "CAR_CAPACITY", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("6", "12", "DATA_PARKING_CODES_V20171220", "LAT_WGS_84", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("6", "13", "DATA_PARKING_CODES_V20171220", "LONG_WGS_84", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("6", "14", "DATA_PARKING_CODES_V20171220", "GEO_DATA", "VARCHAR65535", "n/c"))
+
+    writer.writeRow(Seq("7", "1", "YANDEX_LABEL_CODES", "LABEL_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("7", "2", "YANDEX_LABEL_CODES", "STATION_ID", "NUMERIC", "n/c"))
+
+    writer.writeRow(Seq("8", "1", "YANDEX_LINE_CODES", "COLOR", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("8", "2", "YANDEX_LINE_CODES", "LINE_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("8", "3", "YANDEX_LINE_CODES", "NAME", "VARCHAR65535", "n/c"))
+
+    writer.writeRow(Seq("9", "1", "YANDEX_STATION_CODES", "LABEL_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("9", "2", "YANDEX_STATION_CODES", "LINE_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("9", "3", "YANDEX_STATION_CODES", "LINK_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("9", "4", "YANDEX_STATION_CODES", "NAME", "VARCHAR65535", "n/c"))
+    writer.writeRow(Seq("9", "5", "YANDEX_STATION_CODES", "STATION_ID", "NUMERIC", "n/c"))
+
+    writer.writeRow(Seq("10", "1", "YANDEX_LINK_CODES", "FROM_STATION_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("10", "2", "YANDEX_LINK_CODES", "LINK_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("10", "3", "YANDEX_LINK_CODES", "TIME", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("10", "4", "YANDEX_LINK_CODES", "TO_STATION_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("10", "5", "YANDEX_LINK_CODES", "TRANSFER", "VARCHAR65536", "n/c"))
+    writer.writeRow(Seq("10", "6", "YANDEX_LINK_CODES", "TRANSFER_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("10", "7", "YANDEX_LINK_CODES", "TYPE", "VARCHAR65536", "n/c"))
+
+    writer.writeRow(Seq("11", "1", "YANDEX_TRANSFER_CODES", "STATION_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("11", "2", "YANDEX_TRANSFER_CODES", "TRANSFER_ID", "NUMERIC", "n/c"))
+
+    writer.writeRow(Seq("-1", "1", "CASE_OWNERS", "STATION_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("-1", "2", "CASE_OWNERS", "TRANSFER_ID", "NUMERIC", "n/c"))
+
+    writer.writeRow(Seq("-2", "1", "CASE_RECORDS", "STATION_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("-2", "2", "CASE_RECORDS", "TRANSFER_ID", "NUMERIC", "n/c"))
+
+    writer.writeRow(Seq("-3", "1", "CASE_GRAPHS", "STATION_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("-3", "2", "CASE_GRAPHS", "TRANSFER_ID", "NUMERIC", "n/c"))
+
+    writer.writeRow(Seq("-4", "1", "CASE_STATS", "STATION_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("-4", "2", "CASE_STATS", "TRANSFER_ID", "NUMERIC", "n/c"))
+
+    writer.writeRow(Seq("-5", "1", "CASE_ROUTES", "STATION_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("-5", "2", "CASE_ROUTES", "TRANSFER_ID", "NUMERIC", "n/c"))
+
+    writer.writeRow(Seq("-6", "1", "CASE_PROFILES", "STATION_ID", "NUMERIC", "n/c"))
+    writer.writeRow(Seq("-6", "2", "CASE_PROFILES", "TRANSFER_ID", "NUMERIC", "n/c"))
+
     val result = stream.toString("UTF-8")
     result
   }
 
   def taskAll(): String = {
+    import com.github.tototoshi.csv.DefaultCSVFormat
+    implicit object MyFormat extends DefaultCSVFormat {
+      override val delimiter = '\t'
+      override val lineTerminator = "\n"
+    }
+
     // https://github.com/tototoshi/scala-csv
     // https://www.programcreek.com/scala/java.io.ByteArrayOutputStream
     import com.github.tototoshi.csv.CSVWriter
@@ -190,11 +255,6 @@ object Edwex extends Serializable {
   }
 
   def main(args: Array[String]): Unit = {
-    import com.github.tototoshi.csv.DefaultCSVFormat
-    implicit object MyFormat extends DefaultCSVFormat {
-      override val delimiter = '\t'
-      override val lineTerminator = "\n"
-    }
     writeToFile("/home/user/CODE/access.csv", accessAll())
     writeToFile("/home/user/CODE/edwex.csv", edwexAll())
     writeToFile("/home/user/CODE/task.csv", taskAll())
