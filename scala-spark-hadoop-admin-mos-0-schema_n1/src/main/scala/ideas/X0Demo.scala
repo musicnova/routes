@@ -1,7 +1,7 @@
 package ideas
 
 import java.nio.file.Paths
-import java.util.Calendar
+import java.util.{Calendar, Properties}
 
 import ideas.X0Demo.X.XType
 import org.apache.spark.sql.SaveMode
@@ -24,6 +24,11 @@ object X0Demo extends Serializable {
     T10_YANDEX_LINK_CODES, T11_YANDEX_TRANSFER_CODES,
     O1_CASE_OWNERS, O2_CASE_RECORDS, O3_CASE_GRAPHS, O4_CASE_STATS, O5_CASE_ROUTES, O6_CASE_PROFILES = Value
   }
+
+  case class M (
+    frames: Map[X.XType, (DataFrame, DataFrame)],
+    alts: Map[X.XType, (String, Properties)]
+  )
 
   def main(args: Array[String]): Unit = {
     println("Welcome to Spark!")
@@ -212,8 +217,7 @@ object X0Demo extends Serializable {
           "yandex_transfer_codes_20180104_20180104.csv").toString).rdd,
         elevenYandexTransferCodesSchema)
       elevenYandexTransferCodesDF.show(3, truncate = false)
-
-      val result = etl(spark, Map(X.EDWEX -> (baseEdwexDF, baseEdwexDF),
+      val src = Map(X.EDWEX -> (baseEdwexDF, baseEdwexDF),
         X.T1_METRO_GEO2 -> (oneMetroGeoDF, baseEdwexDF.filter('_c0 === "1")),
         X.T2_MAXIMA -> (twoMaximaDF, baseEdwexDF.filter('_c0 === "2")),
         X.T3_DATA_LINE_CODES -> (threeDataLineCodesDF, baseEdwexDF.filter('_c0 === "3")),
@@ -224,10 +228,10 @@ object X0Demo extends Serializable {
         X.T8_YANDEX_LINE_CODES -> (eightYandexLineCodesDF, baseEdwexDF.filter('_c0 === "8")),
         X.T9_YANDEX_STATION_CODES -> (nineYandexStationCodesDF, baseEdwexDF.filter('_c0 === "9")),
         X.T10_YANDEX_LINK_CODES -> (tenYandexLinkCodesDF, baseEdwexDF.filter('_c0 === "10")),
-        X.T11_YANDEX_TRANSFER_CODES -> (elevenYandexTransferCodesDF, baseEdwexDF.filter('_c0 === "11"))))
-
-      // saveResult(workDir, result)
-      exportResult(spark, workDir, result)
+        X.T11_YANDEX_TRANSFER_CODES -> (elevenYandexTransferCodesDF, baseEdwexDF.filter('_c0 === "11")))
+      val meta = exportResult(spark, Seq(), src)
+      val result = etl(spark, M(src, meta.alts))
+      saveResult(workDir, result.frames)
     }
     spark.sparkContext.stop
     success match { case Failure(e) => throw e case _ => }
@@ -236,9 +240,6 @@ object X0Demo extends Serializable {
   def cache(spark: SparkSession, frame: DataFrame, edwex: DataFrame): (DataFrame, DataFrame) = {
     val edwexStr = edwex.collect.toStream.map(row => row.getString(0)
       + "\t" + row.getString(2) + "\t" + row.getString(3) + "\t" + row.getString(4)).mkString("\n")
-
-    // println(edwexStr)
-
     import org.apache.spark.sql.functions._
     val schemas = parseEDWEX(edwexStr)
     val casts = schemas.keys.toStream.sortWith(_<_).map{ index =>
@@ -247,8 +248,12 @@ object X0Demo extends Serializable {
     (res, edwex)
   }
 
-  def parse(spark: SparkSession, sources: Map[X.XType, (DataFrame, DataFrame)]): Map[X.XType, (DataFrame, DataFrame)] = {
-    sources.filter(_._1 != X.EDWEX).map { case (k, v) => (k, cache(spark, v._1, v._2)) }
+  def parse(spark: SparkSession, sources: M): M = {
+    val res = M(sources.frames.filter(_._1 != X.EDWEX).map { case (k, v) => (k, cache(spark, v._1, v._2)) }, sources.alts)
+    exportResult(spark, Seq(X.T1_METRO_GEO2, X.T2_MAXIMA, X.T3_DATA_LINE_CODES, X.T4_DATA_STATION_CODES,
+      X.T5_DATA_ENTRANCE_STATION_CODES, X.T6_DATA_PARKING_CODES, X.T7_YANDEX_LABEL_CODES,
+      X.T8_YANDEX_LINE_CODES, X.T9_YANDEX_STATION_CODES, X.T10_YANDEX_LINK_CODES,
+      X.T11_YANDEX_TRANSFER_CODES), res.frames)
   }
 
       /*
@@ -276,7 +281,7 @@ object X0Demo extends Serializable {
         lit(1) === lit(1), X.T11_YANDEX_TRANSFER_CODES.toString, spark))
       */
 
-  def etl(spark: SparkSession, sources: Map[X.XType, (DataFrame, DataFrame)]): Map[X.XType, (DataFrame, DataFrame)] = {
+  def etl(spark: SparkSession, sources: M): M = {
     val o0 = parse(spark, sources)
     val o1 = etlO1CaseOwners(o0)
     val o2 = etlO2CaseRecords(o1)
@@ -287,28 +292,36 @@ object X0Demo extends Serializable {
     o6
   }
 
-  def etlO1CaseOwners(sources: Map[X.XType, (DataFrame, DataFrame)]): Map[X.XType, (DataFrame, DataFrame)] = {
-    sources + (X.O1_CASE_OWNERS -> sources(X.T11_YANDEX_TRANSFER_CODES))
+  def etlO1CaseOwners(sources: M): M = {
+    // step001: CASE_OWNERS.ID
+
+
+
+    // select cast(now() as date)
+    // SELECT TO_CHAR(NOW(), 'Mon YYYY');
+
+    M(sources.frames + (X.O1_CASE_OWNERS -> sources.frames(X.T11_YANDEX_TRANSFER_CODES)), sources.alts)
+    // FIXME
   }
 
-  def etlO2CaseRecords(sources: Map[X.XType, (DataFrame, DataFrame)]): Map[X.XType, (DataFrame, DataFrame)] = {
-    sources + (X.O2_CASE_RECORDS -> sources(X.T11_YANDEX_TRANSFER_CODES))
+  def etlO2CaseRecords(sources: M): M = {
+    M(sources.frames + (X.O2_CASE_RECORDS -> sources.frames(X.T11_YANDEX_TRANSFER_CODES)), sources.alts)
   }
 
-  def etlO3CaseGraphs(sources: Map[X.XType, (DataFrame, DataFrame)]): Map[X.XType, (DataFrame, DataFrame)] = {
-    sources + (X.O3_CASE_GRAPHS -> sources(X.T11_YANDEX_TRANSFER_CODES))
+  def etlO3CaseGraphs(sources: M): M = {
+    M(sources.frames + (X.O3_CASE_GRAPHS -> sources.frames(X.T11_YANDEX_TRANSFER_CODES)), sources.alts)
   }
 
-  def etlO4CaseStats(sources: Map[X.XType, (DataFrame, DataFrame)]): Map[X.XType, (DataFrame, DataFrame)] = {
-    sources + (X.O4_CASE_STATS -> sources(X.T11_YANDEX_TRANSFER_CODES))
+  def etlO4CaseStats(sources: M): M = {
+    M(sources.frames + (X.O4_CASE_STATS -> sources.frames(X.T11_YANDEX_TRANSFER_CODES)), sources.alts)
   }
 
-  def etlO5CaseRoutes(sources: Map[X.XType, (DataFrame, DataFrame)]): Map[X.XType, (DataFrame, DataFrame)] = {
-    sources + (X.O5_CASE_ROUTES -> sources(X.T11_YANDEX_TRANSFER_CODES))
+  def etlO5CaseRoutes(sources: M): M = {
+    M(sources.frames + (X.O5_CASE_ROUTES -> sources.frames(X.T11_YANDEX_TRANSFER_CODES)), sources.alts)
   }
 
-  def etlO6CaseProfiles(sources: Map[X.XType, (DataFrame, DataFrame)]): Map[X.XType, (DataFrame, DataFrame)] = {
-    sources + (X.O6_CASE_PROFILES -> sources(X.T11_YANDEX_TRANSFER_CODES))
+  def etlO6CaseProfiles(sources: M): M = {
+    M(sources.frames + (X.O6_CASE_PROFILES -> sources.frames(X.T11_YANDEX_TRANSFER_CODES)), sources.alts)
   }
 
   def preview(chosen: DataFrame, label: String, limit: Int = 3): Unit = {
@@ -604,11 +617,11 @@ object X0Demo extends Serializable {
       .mode(SaveMode.Overwrite).csv(Paths.get(workDir, X.O6_CASE_PROFILES.toString).toString)
   }
 
-  def exportResult(spark: SparkSession, workDir: String, result: Map[XType, (DataFrame, DataFrame)]): Unit = {
+  import java.util.Properties
+  def exportResult(spark: SparkSession, filter: Seq[X.XType], result: Map[XType, (DataFrame, DataFrame)]): M = {
     // https://gist.github.com/brock/7a7a70300096632cec30
     // READ https://docs.databricks.com/spark/latest/data-sources/sql-databases.html
 
-    import java.util.Properties
     val jUsername = "postgres"
     val jPassword = "123456"
     val jHostname = "127.0.0.1"
@@ -629,19 +642,13 @@ object X0Demo extends Serializable {
     val oSeq = Seq(X.O1_CASE_OWNERS, X.O2_CASE_RECORDS, X.O3_CASE_GRAPHS,
       X.O4_CASE_STATS, X.O5_CASE_ROUTES, X.O6_CASE_PROFILES)
 
-    tSeq.map(xt => {
+    oSeq.union(tSeq).filter(filter.contains(_)).map(xt => {
       result(xt)._1.createOrReplaceTempView(xt.toString)
       spark.table(xt.toString).write.mode(SaveMode.Overwrite)
         .jdbc(jUrl, "v001_" + xt.toString, connectionProperties)
       true
-    }).reduce((_,_)=>true)
-
-    oSeq.map(xo => {
-      result(xo)._1.createOrReplaceTempView(xo.toString)
-      spark.table(xo.toString).write.mode(SaveMode.Overwrite)
-        .jdbc(jUrl, "v001_" + xo.toString, connectionProperties)
-      true
-    }).reduce((_,_)=>true)
-
+    })
+    connection.close()
+    M(result, result.map{case(k, _) => (k, ("v001_" + k.toString, connectionProperties))})
   }
 }
