@@ -143,9 +143,9 @@ object Edwex extends Serializable {
     writer.writeRow(Seq("10", "2", "YANDEX_LINK_CODES", "LINK_ID", "NUMERIC", "n/c"))
     writer.writeRow(Seq("10", "3", "YANDEX_LINK_CODES", "TIME", "NUMERIC", "n/c"))
     writer.writeRow(Seq("10", "4", "YANDEX_LINK_CODES", "TO_STATION_ID", "NUMERIC", "n/c"))
-    writer.writeRow(Seq("10", "5", "YANDEX_LINK_CODES", "TRANSFER", "VARCHAR65536", "n/c"))
+    writer.writeRow(Seq("10", "5", "YANDEX_LINK_CODES", "TRANSFER", "VARCHAR65535", "n/c"))
     writer.writeRow(Seq("10", "6", "YANDEX_LINK_CODES", "TRANSFER_ID", "NUMERIC", "n/c"))
-    writer.writeRow(Seq("10", "7", "YANDEX_LINK_CODES", "TYPE", "VARCHAR65536", "n/c"))
+    writer.writeRow(Seq("10", "7", "YANDEX_LINK_CODES", "TYPE", "VARCHAR65535", "n/c"))
 
     writer.writeRow(Seq("11", "1", "YANDEX_TRANSFER_CODES", "STATION_ID", "NUMERIC", "n/c"))
     writer.writeRow(Seq("11", "2", "YANDEX_TRANSFER_CODES", "TRANSFER_ID", "NUMERIC", "n/c"))

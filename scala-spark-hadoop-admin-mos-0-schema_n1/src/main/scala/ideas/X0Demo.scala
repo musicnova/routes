@@ -234,8 +234,17 @@ object X0Demo extends Serializable {
   }
 
   def cache(spark: SparkSession, frame: DataFrame, edwex: DataFrame): (DataFrame, DataFrame) = {
-    (frame, edwex)
-    // FIXME
+    val edwexStr = edwex.collect.toStream.map(row => row.getString(0)
+      + "\t" + row.getString(2) + "\t" + row.getString(3) + "\t" + row.getString(4)).mkString("\n")
+
+    // println(edwexStr)
+
+    import org.apache.spark.sql.functions._
+    val schemas = parseEDWEX(edwexStr)
+    val casts = schemas.keys.toStream.sortWith(_<_).map{ index =>
+      colCast(col(renameCol(index, schemas(index))), schemas(index)._2) as schemas(index)._1 }
+    val res = frame.select(casts: _*)
+    (res, edwex)
   }
 
   def parse(spark: SparkSession, sources: Map[X.XType, (DataFrame, DataFrame)]): Map[X.XType, (DataFrame, DataFrame)] = {
@@ -311,6 +320,10 @@ object X0Demo extends Serializable {
   }
 
   def renameCol(index: Int, name: (String, KHD.Value)): String = name match {
+    case (c, v) => c
+  }
+
+  def oldRenameCol(index: Int, name: (String, KHD.Value)): String = name match {
     case (c, v) => "c" + (index - 1) + "_" + v.toString + "_" + c
   }
 
