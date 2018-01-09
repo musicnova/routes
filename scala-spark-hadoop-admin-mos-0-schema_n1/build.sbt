@@ -8,6 +8,7 @@ lazy val general = Seq(
 )
 
 lazy val dependencies = Seq(
+  postgresDriver,
   log4jApi,
   log4jCore,
   sparkCore % "provided",

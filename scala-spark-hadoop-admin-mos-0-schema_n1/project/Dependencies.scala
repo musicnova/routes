@@ -6,7 +6,9 @@ object Dependencies {
   lazy val hadoopVersion = "2.7.3"
   lazy val opencsvVersion = "1.3.5"
   lazy val log4jVersion = "1.6.4"
+  lazy val postgreVersion = "9.4-1204-jdbc4"
 
+  lazy val postgresDriver = "org.postgresql" % "postgresql" % postgreVersion
   lazy val log4jApi = "org.slf4j" % "slf4j-api" % log4jVersion
   lazy val log4jCore = "org.slf4j" % "slf4j-log4j12" % log4jVersion
   lazy val openCsv = "com.github.tototoshi" %% "scala-csv" % opencsvVersion
