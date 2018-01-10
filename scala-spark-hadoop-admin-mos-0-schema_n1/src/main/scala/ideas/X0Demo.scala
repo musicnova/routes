@@ -1,6 +1,7 @@
 package ideas
 
 import java.nio.file.Paths
+import java.sql.Connection
 import java.util.{Calendar, Properties}
 
 import ideas.X0Demo.X.XType
@@ -18,17 +19,18 @@ object X0Demo extends Serializable {
 
   object X extends Enumeration {
     type XType = Value
-    val EDWEX, T1_METRO_GEO2, T2_MAXIMA, T3_DATA_LINE_CODES, T4_DATA_STATION_CODES,
+    val EDWEX, ITASK, T1_METRO_GEO2, T2_MAXIMA, T3_DATA_LINE_CODES, T4_DATA_STATION_CODES,
     T5_DATA_ENTRANCE_STATION_CODES, T6_DATA_PARKING_CODES,
     T7_YANDEX_LABEL_CODES, T8_YANDEX_LINE_CODES, T9_YANDEX_STATION_CODES,
     T10_YANDEX_LINK_CODES, T11_YANDEX_TRANSFER_CODES,
     O1_CASE_OWNERS, O2_CASE_RECORDS, O3_CASE_GRAPHS, O4_CASE_STATS, O5_CASE_ROUTES, O6_CASE_PROFILES = Value
   }
 
-  case class M (
-    frames: Map[X.XType, (DataFrame, DataFrame)],
-    alts: Map[X.XType, (String, Properties)]
-  )
+  case class My (dat: DataFrame, edw: DataFrame)
+
+  case class Db (tbl: String, how: Properties)
+
+  case class M (frames: Map[X.XType, My], alts: Map[X.XType, Db])
 
   def main(args: Array[String]): Unit = {
     println("Welcome to Spark!")
@@ -63,6 +65,19 @@ object X0Demo extends Serializable {
 //      |1  |1  |METRO_GEO2|LINE     |VARCHAR65535|
 //        |1  |2  |METRO_GEO2|LINECOLOR|VARCHAR65535|
 //        |1  |3  |METRO_GEO2|NAME     |VARCHAR65535|
+
+      val zeroITaskSchema = StructType(
+        baseEdwexDF.select('_c3).where('_c0 === "0").collect.map(row => StructField(row.getString(0), StringType))
+      )
+      val zeroITaskDF = spark.createDataFrame(spark.read.format("com.databricks.spark.csv")
+        .option("header", "true").option("delimiter", "\t")
+        .load(Paths.get("/home/user/", "CODE", "itask.csv").toString).rdd, zeroITaskSchema)
+      zeroITaskDF.show(3, truncate = false)
+//      |N  |LOGIC |NAME               |LEVEL|SRC_FIELD|SRC_SYSTEM |SRC_LOAD|SRC_TABLE|KHD_TABLE|REGION|COMMENT|
+//      +---+------+-------------------+-----+---------+-----------+--------+---------+---------+------+-------+
+//      |1  |select|***CASE_OWNERS.CODE|2    |n/a      |data.mos.ru|000001  |dual     |dual     |      |-      |
+//      |2  |select|CASE_OWNERS.ID     |2    |n/a      |data.mos.ru|000001  |dual     |dual     |      |-      |
+//      |3  |select|CASE_OWNERS.SCHEMA |2    |n/a      |data.mos.ru|000001  |dual     |dual     |      |-      |
 
       val oneMetroGeoSchema = StructType(
         baseEdwexDF.select('_c3).where('_c0 === "1").collect.map(row => StructField(row.getString(0), StringType))
@@ -217,18 +232,19 @@ object X0Demo extends Serializable {
           "yandex_transfer_codes_20180104_20180104.csv").toString).rdd,
         elevenYandexTransferCodesSchema)
       elevenYandexTransferCodesDF.show(3, truncate = false)
-      val src = Map(X.EDWEX -> (baseEdwexDF, baseEdwexDF),
-        X.T1_METRO_GEO2 -> (oneMetroGeoDF, baseEdwexDF.filter('_c0 === "1")),
-        X.T2_MAXIMA -> (twoMaximaDF, baseEdwexDF.filter('_c0 === "2")),
-        X.T3_DATA_LINE_CODES -> (threeDataLineCodesDF, baseEdwexDF.filter('_c0 === "3")),
-        X.T4_DATA_STATION_CODES -> (fourDataStationCodesDF, baseEdwexDF.filter('_c0 === "4")),
-        X.T5_DATA_ENTRANCE_STATION_CODES -> (fiveDataEntranceStationCodesDF, baseEdwexDF.filter('_c0 === "5")),
-        X.T6_DATA_PARKING_CODES -> (sixDataParkingCodesDF, baseEdwexDF.filter('_c0 === "6")),
-        X.T7_YANDEX_LABEL_CODES -> (sevenYandexLabelCodesDF, baseEdwexDF.filter('_c0 === "7")),
-        X.T8_YANDEX_LINE_CODES -> (eightYandexLineCodesDF, baseEdwexDF.filter('_c0 === "8")),
-        X.T9_YANDEX_STATION_CODES -> (nineYandexStationCodesDF, baseEdwexDF.filter('_c0 === "9")),
-        X.T10_YANDEX_LINK_CODES -> (tenYandexLinkCodesDF, baseEdwexDF.filter('_c0 === "10")),
-        X.T11_YANDEX_TRANSFER_CODES -> (elevenYandexTransferCodesDF, baseEdwexDF.filter('_c0 === "11")))
+      val src = Map(X.EDWEX -> My(baseEdwexDF, baseEdwexDF),
+        X.ITASK -> My(zeroITaskDF, baseEdwexDF.filter('_c0 === "0")),
+        X.T1_METRO_GEO2 -> My(oneMetroGeoDF, baseEdwexDF.filter('_c0 === "1")),
+        X.T2_MAXIMA -> My(twoMaximaDF, baseEdwexDF.filter('_c0 === "2")),
+        X.T3_DATA_LINE_CODES -> My(threeDataLineCodesDF, baseEdwexDF.filter('_c0 === "3")),
+        X.T4_DATA_STATION_CODES -> My(fourDataStationCodesDF, baseEdwexDF.filter('_c0 === "4")),
+        X.T5_DATA_ENTRANCE_STATION_CODES -> My(fiveDataEntranceStationCodesDF, baseEdwexDF.filter('_c0 === "5")),
+        X.T6_DATA_PARKING_CODES -> My(sixDataParkingCodesDF, baseEdwexDF.filter('_c0 === "6")),
+        X.T7_YANDEX_LABEL_CODES -> My(sevenYandexLabelCodesDF, baseEdwexDF.filter('_c0 === "7")),
+        X.T8_YANDEX_LINE_CODES -> My(eightYandexLineCodesDF, baseEdwexDF.filter('_c0 === "8")),
+        X.T9_YANDEX_STATION_CODES -> My(nineYandexStationCodesDF, baseEdwexDF.filter('_c0 === "9")),
+        X.T10_YANDEX_LINK_CODES -> My(tenYandexLinkCodesDF, baseEdwexDF.filter('_c0 === "10")),
+        X.T11_YANDEX_TRANSFER_CODES -> My(elevenYandexTransferCodesDF, baseEdwexDF.filter('_c0 === "11")))
       val meta = exportResult(spark, Seq(), src)
       val result = etl(spark, M(src, meta.alts))
       saveResult(workDir, result.frames)
@@ -237,7 +253,7 @@ object X0Demo extends Serializable {
     success match { case Failure(e) => throw e case _ => }
   }
 
-  def cache(spark: SparkSession, frame: DataFrame, edwex: DataFrame): (DataFrame, DataFrame) = {
+  def cache(spark: SparkSession, frame: DataFrame, edwex: DataFrame): My = {
     val edwexStr = edwex.collect.toStream.map(row => row.getString(0)
       + "\t" + row.getString(2) + "\t" + row.getString(3) + "\t" + row.getString(4)).mkString("\n")
     import org.apache.spark.sql.functions._
@@ -245,12 +261,13 @@ object X0Demo extends Serializable {
     val casts = schemas.keys.toStream.sortWith(_<_).map{ index =>
       colCast(col(renameCol(index, schemas(index))), schemas(index)._2) as schemas(index)._1 }
     val res = frame.select(casts: _*)
-    (res, edwex)
+    My(res, edwex)
   }
 
-  def parse(spark: SparkSession, sources: M): M = {
-    val res = M(sources.frames.filter(_._1 != X.EDWEX).map { case (k, v) => (k, cache(spark, v._1, v._2)) }, sources.alts)
-    exportResult(spark, Seq(X.T1_METRO_GEO2, X.T2_MAXIMA, X.T3_DATA_LINE_CODES, X.T4_DATA_STATION_CODES,
+  def parse(spark: SparkSession, conn: Connection, sources: M): M = {
+    val res = M(sources.frames.map { case (k, v) => if(k == X.EDWEX) (k,v) else (k, cache(spark, v.dat, v.edw)) },
+      sources.alts)
+    exportResult(spark, Seq(X.ITASK, X.T1_METRO_GEO2, X.T2_MAXIMA, X.T3_DATA_LINE_CODES, X.T4_DATA_STATION_CODES,
       X.T5_DATA_ENTRANCE_STATION_CODES, X.T6_DATA_PARKING_CODES, X.T7_YANDEX_LABEL_CODES,
       X.T8_YANDEX_LINE_CODES, X.T9_YANDEX_STATION_CODES, X.T10_YANDEX_LINK_CODES,
       X.T11_YANDEX_TRANSFER_CODES), res.frames)
@@ -282,18 +299,26 @@ object X0Demo extends Serializable {
       */
 
   def etl(spark: SparkSession, sources: M): M = {
-    val o0 = parse(spark, sources)
-    val o1 = etlO1CaseOwners(o0)
-    val o2 = etlO2CaseRecords(o1)
-    val o3 = etlO3CaseGraphs(o2)
-    val o4 = etlO4CaseStats(o3)
-    val o5 = etlO5CaseRoutes(o4)
-    val o6 = etlO6CaseProfiles(o5)
+    import java.sql.DriverManager
+    val connection = DriverManager.getConnection(sources.alts(X.EDWEX).how.getProperty("url"), sources.alts(X.EDWEX).how)
+
+    val o0 = parse(spark, connection, sources)
+    val o1 = etlO1CaseOwners(spark, connection, o0)
+    val o2 = etlO2CaseRecords(spark, connection, o1)
+    val o3 = etlO3CaseGraphs(spark, connection, o2)
+    val o4 = etlO4CaseStats(spark, connection, o3)
+    val o5 = etlO5CaseRoutes(spark, connection, o4)
+    val o6 = etlO6CaseProfiles(spark, connection, o5)
+
+    connection.close()
     o6
   }
 
-  def etlO1CaseOwners(sources: M): M = {
-    // step001: CASE_OWNERS.ID
+  def etlO1CaseOwners(spark: SparkSession, conn: Connection, sources: M): M = {
+    // TODO 1: ***CASE_OWNERS.CODE
+    val aCaseOwnersCodeQRY = "(select 1 as troyka_wifi_matching_code) dual"
+    val aCaseOwnersCodeDF = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
+      aCaseOwnersCodeQRY, sources.alts(X.EDWEX).how)
 
 
 
@@ -304,23 +329,23 @@ object X0Demo extends Serializable {
     // FIXME
   }
 
-  def etlO2CaseRecords(sources: M): M = {
+  def etlO2CaseRecords(spark: SparkSession, conn: Connection, sources: M): M = {
     M(sources.frames + (X.O2_CASE_RECORDS -> sources.frames(X.T11_YANDEX_TRANSFER_CODES)), sources.alts)
   }
 
-  def etlO3CaseGraphs(sources: M): M = {
+  def etlO3CaseGraphs(spark: SparkSession, conn: Connection, sources: M): M = {
     M(sources.frames + (X.O3_CASE_GRAPHS -> sources.frames(X.T11_YANDEX_TRANSFER_CODES)), sources.alts)
   }
 
-  def etlO4CaseStats(sources: M): M = {
+  def etlO4CaseStats(spark: SparkSession, conn: Connection, sources: M): M = {
     M(sources.frames + (X.O4_CASE_STATS -> sources.frames(X.T11_YANDEX_TRANSFER_CODES)), sources.alts)
   }
 
-  def etlO5CaseRoutes(sources: M): M = {
+  def etlO5CaseRoutes(spark: SparkSession, conn: Connection, sources: M): M = {
     M(sources.frames + (X.O5_CASE_ROUTES -> sources.frames(X.T11_YANDEX_TRANSFER_CODES)), sources.alts)
   }
 
-  def etlO6CaseProfiles(sources: M): M = {
+  def etlO6CaseProfiles(spark: SparkSession, conn: Connection, sources: M): M = {
     M(sources.frames + (X.O6_CASE_PROFILES -> sources.frames(X.T11_YANDEX_TRANSFER_CODES)), sources.alts)
   }
 
@@ -547,78 +572,78 @@ object X0Demo extends Serializable {
     dataDF
   }
 
-  def saveResult(workDir: String, result: Map[XType, (DataFrame, DataFrame)]): Unit = {
-    result(X.T1_METRO_GEO2)._1.coalesce(1).write
+  def saveResult(workDir: String, result: Map[XType, My]): Unit = {
+    result(X.T1_METRO_GEO2).dat.coalesce(1).write
       .options(Map("header" -> "true", "sep" -> ";", "quoteAll" -> "true", "compression" -> "gzip"))
       .mode(SaveMode.Overwrite).csv(Paths.get(workDir, X.T1_METRO_GEO2.toString).toString)
 
-    result(X.T2_MAXIMA)._1.coalesce(1).write
+    result(X.T2_MAXIMA).dat.coalesce(1).write
       .options(Map("header" -> "true", "sep" -> ";", "quoteAll" -> "true", "compression" -> "gzip"))
       .mode(SaveMode.Overwrite).csv(Paths.get(workDir, X.T2_MAXIMA.toString).toString)
 
-    result(X.T3_DATA_LINE_CODES)._1.coalesce(1).write
+    result(X.T3_DATA_LINE_CODES).dat.coalesce(1).write
       .options(Map("header" -> "true", "sep" -> ";", "quoteAll" -> "true", "compression" -> "gzip"))
       .mode(SaveMode.Overwrite).csv(Paths.get(workDir, X.T3_DATA_LINE_CODES.toString).toString)
 
-    result(X.T4_DATA_STATION_CODES)._1.coalesce(1).write
+    result(X.T4_DATA_STATION_CODES).dat.coalesce(1).write
       .options(Map("header" -> "true", "sep" -> ";", "quoteAll" -> "true", "compression" -> "gzip"))
       .mode(SaveMode.Overwrite).csv(Paths.get(workDir, X.T4_DATA_STATION_CODES.toString).toString)
 
-    result(X.T5_DATA_ENTRANCE_STATION_CODES)._1.coalesce(1).write
+    result(X.T5_DATA_ENTRANCE_STATION_CODES).dat.coalesce(1).write
       .options(Map("header" -> "true", "sep" -> ";", "quoteAll" -> "true", "compression" -> "gzip"))
       .mode(SaveMode.Overwrite).csv(Paths.get(workDir, X.T5_DATA_ENTRANCE_STATION_CODES.toString).toString)
 
-    result(X.T6_DATA_PARKING_CODES)._1.coalesce(1).write
+    result(X.T6_DATA_PARKING_CODES).dat.coalesce(1).write
       .options(Map("header" -> "true", "sep" -> ";", "quoteAll" -> "true", "compression" -> "gzip"))
       .mode(SaveMode.Overwrite).csv(Paths.get(workDir, X.T6_DATA_PARKING_CODES.toString).toString)
 
-    result(X.T7_YANDEX_LABEL_CODES)._1.coalesce(1).write
+    result(X.T7_YANDEX_LABEL_CODES).dat.coalesce(1).write
       .options(Map("header" -> "true", "sep" -> ";", "quoteAll" -> "true", "compression" -> "gzip"))
       .mode(SaveMode.Overwrite).csv(Paths.get(workDir, X.T7_YANDEX_LABEL_CODES.toString).toString)
 
-    result(X.T8_YANDEX_LINE_CODES)._1.coalesce(1).write
+    result(X.T8_YANDEX_LINE_CODES).dat.coalesce(1).write
       .options(Map("header" -> "true", "sep" -> ";", "quoteAll" -> "true", "compression" -> "gzip"))
       .mode(SaveMode.Overwrite).csv(Paths.get(workDir, X.T8_YANDEX_LINE_CODES.toString).toString)
 
-    result(X.T9_YANDEX_STATION_CODES)._1.coalesce(1).write
+    result(X.T9_YANDEX_STATION_CODES).dat.coalesce(1).write
       .options(Map("header" -> "true", "sep" -> ";", "quoteAll" -> "true", "compression" -> "gzip"))
       .mode(SaveMode.Overwrite).csv(Paths.get(workDir, X.T9_YANDEX_STATION_CODES.toString).toString)
 
-    result(X.T10_YANDEX_LINK_CODES)._1.coalesce(1).write
+    result(X.T10_YANDEX_LINK_CODES).dat.coalesce(1).write
       .options(Map("header" -> "true", "sep" -> ";", "quoteAll" -> "true", "compression" -> "gzip"))
       .mode(SaveMode.Overwrite).csv(Paths.get(workDir, X.T10_YANDEX_LINK_CODES.toString).toString)
 
-    result(X.T11_YANDEX_TRANSFER_CODES)._1.coalesce(1).write
+    result(X.T11_YANDEX_TRANSFER_CODES).dat.coalesce(1).write
       .options(Map("header" -> "true", "sep" -> ";", "quoteAll" -> "true", "compression" -> "gzip"))
       .mode(SaveMode.Overwrite).csv(Paths.get(workDir, X.T11_YANDEX_TRANSFER_CODES.toString).toString)
 
-    result(X.O1_CASE_OWNERS)._1.coalesce(1).write
+    result(X.O1_CASE_OWNERS).dat.coalesce(1).write
       .options(Map("header" -> "true", "sep" -> ";", "quoteAll" -> "true", "compression" -> "gzip"))
       .mode(SaveMode.Overwrite).csv(Paths.get(workDir, X.O1_CASE_OWNERS.toString).toString)
 
-    result(X.O2_CASE_RECORDS)._1.coalesce(1).write
+    result(X.O2_CASE_RECORDS).dat.coalesce(1).write
       .options(Map("header" -> "true", "sep" -> ";", "quoteAll" -> "true", "compression" -> "gzip"))
       .mode(SaveMode.Overwrite).csv(Paths.get(workDir, X.O2_CASE_RECORDS.toString).toString)
 
-    result(X.O3_CASE_GRAPHS)._1.coalesce(1).write
+    result(X.O3_CASE_GRAPHS).dat.coalesce(1).write
       .options(Map("header" -> "true", "sep" -> ";", "quoteAll" -> "true", "compression" -> "gzip"))
       .mode(SaveMode.Overwrite).csv(Paths.get(workDir, X.O3_CASE_GRAPHS.toString).toString)
 
-    result(X.O4_CASE_STATS)._1.coalesce(1).write
+    result(X.O4_CASE_STATS).dat.coalesce(1).write
       .options(Map("header" -> "true", "sep" -> ";", "quoteAll" -> "true", "compression" -> "gzip"))
       .mode(SaveMode.Overwrite).csv(Paths.get(workDir, X.O4_CASE_STATS.toString).toString)
 
-    result(X.O5_CASE_ROUTES)._1.coalesce(1).write
+    result(X.O5_CASE_ROUTES).dat.coalesce(1).write
       .options(Map("header" -> "true", "sep" -> ";", "quoteAll" -> "true", "compression" -> "gzip"))
       .mode(SaveMode.Overwrite).csv(Paths.get(workDir, X.O5_CASE_ROUTES.toString).toString)
 
-    result(X.O6_CASE_PROFILES)._1.coalesce(1).write
+    result(X.O6_CASE_PROFILES).dat.coalesce(1).write
       .options(Map("header" -> "true", "sep" -> ";", "quoteAll" -> "true", "compression" -> "gzip"))
       .mode(SaveMode.Overwrite).csv(Paths.get(workDir, X.O6_CASE_PROFILES.toString).toString)
   }
 
   import java.util.Properties
-  def exportResult(spark: SparkSession, filter: Seq[X.XType], result: Map[XType, (DataFrame, DataFrame)]): M = {
+  def exportResult(spark: SparkSession, flt: Seq[X.XType], result: Map[XType, My]): M = {
     // https://gist.github.com/brock/7a7a70300096632cec30
     // READ https://docs.databricks.com/spark/latest/data-sources/sql-databases.html
 
@@ -631,24 +656,27 @@ object X0Demo extends Serializable {
     val connectionProperties = new Properties()
     connectionProperties.put("user", jUsername)
     connectionProperties.put("password", jPassword)
+    connectionProperties.put("url", jUrl)
 
     import java.sql.DriverManager
-    val connection = DriverManager.getConnection(jUrl, connectionProperties)
+    val connection = DriverManager.getConnection(connectionProperties.getProperty("url"), connectionProperties)
 
-    val tSeq = Seq(X.T1_METRO_GEO2, X.T2_MAXIMA, X.T3_DATA_LINE_CODES, X.T4_DATA_STATION_CODES,
+    val eSeq = Seq(X.EDWEX)
+
+    val tSeq = Seq(X.ITASK, X.T1_METRO_GEO2, X.T2_MAXIMA, X.T3_DATA_LINE_CODES, X.T4_DATA_STATION_CODES,
       X.T5_DATA_ENTRANCE_STATION_CODES, X.T6_DATA_PARKING_CODES, X.T7_YANDEX_LABEL_CODES,
       X.T8_YANDEX_LINE_CODES, X.T9_YANDEX_STATION_CODES, X.T10_YANDEX_LINK_CODES, X.T11_YANDEX_TRANSFER_CODES)
 
     val oSeq = Seq(X.O1_CASE_OWNERS, X.O2_CASE_RECORDS, X.O3_CASE_GRAPHS,
       X.O4_CASE_STATS, X.O5_CASE_ROUTES, X.O6_CASE_PROFILES)
 
-    oSeq.union(tSeq).filter(filter.contains(_)).map(xt => {
-      result(xt)._1.createOrReplaceTempView(xt.toString)
+    eSeq.union(tSeq.union(tSeq)).filter(flt.union(Seq(X.EDWEX)).contains(_)).map(xt => {
+      result(xt).dat.createOrReplaceTempView(xt.toString)
       spark.table(xt.toString).write.mode(SaveMode.Overwrite)
         .jdbc(jUrl, "v001_" + xt.toString, connectionProperties)
       true
     })
     connection.close()
-    M(result, result.map{case(k, _) => (k, ("v001_" + k.toString, connectionProperties))})
+    M(result, result.map{case(k, _) => (k, Db("v001_" + k.toString, connectionProperties))})
   }
 }
