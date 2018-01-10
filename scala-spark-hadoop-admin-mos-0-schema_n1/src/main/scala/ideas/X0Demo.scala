@@ -314,10 +314,38 @@ object X0Demo extends Serializable {
     o6
   }
 
+  //  CaseOwnersCode:
+//    EXAMPLE = 1
+//  BYCICLES_WIFI_MATCH = 2
+//  TROYKA_WIFI_MATCH = 3
+//
+//  CaseOwnersSchema:
+//    DEFAULT_METRO_TRANSFERS_ENTRANCES = 1
+//
+//  CaseGraphsLinkType:
+//    METRO = 1
+//  TRANSFER = 2
+//  ENTRANCE = 3
+//
+//  CaseGraphsColor:
+//    UNKNOWN = 0
+//  HFF0000 = 1
+//  H00FF00 = 2
+//  H0000FF = 3
+//
+//  CaseStatsResourceType:
+//    DEMO = 1
+//  YANDEX_API = 2
+//
+//  ​CaseRecordsType:
+//    STATION = 1
+//  EXIT = 2
+//  ENTRANCE = 3
+
   object REPORT extends Enumeration {
     type ReportType = Value
     val O1X01CODE, O1X02STAMP, O1X03ID, O1X04SCHEMA, O1X05DESCRIPTION,
-    O2X06ID, O2X07OWNERS_SCHEMA = Value
+    O2X06ID, O2X07OWNERS_SCHEMA, O2X08TYPE, O2X09EN_DOOR_CODE = Value
   }
 
   def etlO1CaseOwners(spark: SparkSession, conn: Connection, sources: M): M = {
@@ -411,33 +439,53 @@ object X0Demo extends Serializable {
 
     // TODO 6: ***CASE_RECORDS.ID
     val aCaseRecordsIdQRY006 = "(select (select max(STAMP) from v001_o1_case_owners where schema = 1)" +
-      " * 1000000 + generate_series as ID from generate_series(1000001, 9999999)) dual"
+      " * 1000000 + generate_series as ID from generate_series(1000000, 9999999)) dual"
     val aCaseRecordsIdDF006 = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
       aCaseRecordsIdQRY006, sources.alts(X.EDWEX).how)
 
     val sixReportDF = aCaseRecordsIdDF006.select('ID as ""+REPORT.O2X06ID)
     sixReportDF.show(3, truncate=false)
-    //
-    //
-    //
-    //
-    //
+//    |O2X06ID         |
+//    +----------------+
+//    |1801101806000001|
+//      |1801101806000002|
+//      |1801101806000003|
 
     // TODO 7: CASE_RECORDS.OWNERS_SCHEMA
     val aCaseRecordsOwnersSchemaQRY007 = "(select 1 as OWNERS_SCHEMA," +
       " (select max(STAMP) from v001_o1_case_owners where schema = 1)" +
-      " * 1000000 + generate_series as ID from generate_series(1000001, 9999999)) dual"
+      " * 1000000 + generate_series as ID from generate_series(1000000, 9999999)) dual"
     val aCaseRecordsOwnersSchemaDF007 = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
       aCaseRecordsOwnersSchemaQRY007, sources.alts(X.EDWEX).how)
 
-    val sevenReportDF = sixReportDF.join(aCaseRecordsOwnersSchemaDF007.select('ID, 'OWNERS_SCHEMA),
+    val sevenReportDF = sixReportDF.join(aCaseRecordsOwnersSchemaDF007.select('ID, 'OWNERS_SCHEMA as ""+REPORT.O2X07OWNERS_SCHEMA),
       sixReportDF(""+REPORT.O2X06ID) === aCaseRecordsOwnersSchemaDF007("ID"), "left_outer").drop("ID")
     sevenReportDF.show(3, truncate=false)
-    //
-    //
-    //
-    //
-    //
+//    |O2X06ID         |O2X07OWNERS_SCHEMA|
+//    +----------------+------------------+
+//    |1801101940000546|1                 |
+//      |1801101940000643|1                 |
+//      |1801101940000711|1                 |
+
+    // TODO 8: CASE_RECORDS.TYPE
+    val aCaseRecordsTypeQRY008 = "(select 1 as TYPE, (select max(STAMP) from v001_o1_case_owners where schema = 1)" +
+      " * 1000000 + generate_series as ID from generate_series(1000000, 4999999)" +
+      " union all select 3 as TYPE, (select max(STAMP) from v001_o1_case_owners where schema = 1)" +
+      " * 1000000 + generate_series as ID from generate_series(5000000, 9999999)) dual"
+    val aCaseRecordsTypeDF008 = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
+      aCaseRecordsTypeQRY008, sources.alts(X.EDWEX).how)
+
+    val eightReportDF = sevenReportDF.join(aCaseRecordsTypeDF008.select('ID, 'TYPE as ""+REPORT.O2X08TYPE),
+      sevenReportDF(""+REPORT.O2X06ID) === aCaseRecordsTypeDF008("ID"), "left_outer").drop("ID")
+    eightReportDF.show(3, truncate=false)
+//    |O2X06ID         |O2X07OWNERS_SCHEMA|O2X08TYPE|
+//    +----------------+------------------+---------+
+//    |1801101940000546|1                 |1        |
+//      |1801101940000643|1                 |1        |
+//      |1801101940000711|1                 |1        |
+
+    // TODO 9: CASE_RECORDS.EN_DOOR_CODE
+
 
     M(sources.frames + (X.O2_CASE_RECORDS -> sources.frames(X.T11_YANDEX_TRANSFER_CODES)), sources.alts)
   }
