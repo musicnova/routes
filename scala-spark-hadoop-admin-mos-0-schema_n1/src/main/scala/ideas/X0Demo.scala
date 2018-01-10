@@ -316,7 +316,8 @@ object X0Demo extends Serializable {
 
   object REPORT extends Enumeration {
     type ReportType = Value
-    val O1X01CODE, O1X02ID, O1X03SCHEMA, O1X04DESCRIPTION = Value
+    val O1X01CODE, O1X02STAMP, O1X03ID, O1X04SCHEMA, O1X05DESCRIPTION,
+    O2X06ID, O2X07OWNERS_SCHEMA = Value
   }
 
   def etlO1CaseOwners(spark: SparkSession, conn: Connection, sources: M): M = {
@@ -336,52 +337,67 @@ object X0Demo extends Serializable {
 //    |1        |
 //      +---------+
 
-    // TODO 2: CASE_OWNERS.ID
+    // TODO 2: CASE_OWNERS.STAMP
     // https://stackoverflow.com/questions/7415077/date-in-mmm-yyyy-format-in-postgresql
-    val aCaseOwnersIdQRY002 = "(select CONCAT(TO_CHAR(NOW(), 'YYMMDDHH24mm'), '001') as ID, 1 as CODE) dual"
-    val aCaseOwnersIdDF002 = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
-      aCaseOwnersIdQRY002, sources.alts(X.EDWEX).how)
+    val aCaseOwnersStampQRY002 = "(select CAST(TO_CHAR(NOW(), 'YYMMDDHH24MI') as bigint) as STAMP, 1 as CODE) dual"
+    val aCaseOwnersStampDF002 = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
+      aCaseOwnersStampQRY002, sources.alts(X.EDWEX).how)
 
-    val twoReportDF = oneReportDF.join(aCaseOwnersIdDF002.select('ID as ""+REPORT.O1X02ID, 'CODE),
-      oneReportDF(""+REPORT.O1X01CODE) === aCaseOwnersIdDF002("CODE")).drop("CODE")
+    val twoReportDF = oneReportDF.join(aCaseOwnersStampDF002.select('STAMP as ""+REPORT.O1X02STAMP, 'CODE),
+      oneReportDF(""+REPORT.O1X01CODE) === aCaseOwnersStampDF002("CODE"), "left_outer").drop("CODE")
     twoReportDF.show(3, truncate=false)
-//    +---------+-------------+
-//    |O1X01CODE|O1X02ID      |
-//    +---------+-------------+
-//    |1        |1801101501001|
-//      +---------+-------------+
+//    +---------+----------+
+//    |O1X01CODE|O1X02STAMP|
+//    +---------+----------+
+//    |1        |1801101701|
+//      +---------+----------+
 
-    // TODO 3: CASE_OWNERS.SCHEMA
-    val aCaseOwnersSchemaQRY003 = "(select 1 as SCHEMA, 1 as CODE) dual"
-    val aCaseOwnersSchemaDF003 = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
-      aCaseOwnersSchemaQRY003, sources.alts(X.EDWEX).how)
+    // TODO 3: CASE_OWNERS.ID
+    // https://stackoverflow.com/questions/7415077/date-in-mmm-yyyy-format-in-postgresql
+    val aCaseOwnersIdQRY003 = "(select 1001 as ID, 1 as CODE) dual"
+    val aCaseOwnersIdDF003 = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
+      aCaseOwnersIdQRY003, sources.alts(X.EDWEX).how)
 
-    val threeReportDF = twoReportDF.join(aCaseOwnersSchemaDF003.select('SCHEMA as ""+REPORT.O1X03SCHEMA, 'CODE),
-      twoReportDF(""+REPORT.O1X01CODE) === aCaseOwnersSchemaDF003("CODE")).drop("CODE")
+    val threeReportDF = twoReportDF.join(aCaseOwnersIdDF003.select('ID as ""+REPORT.O1X03ID, 'CODE),
+      twoReportDF(""+REPORT.O1X01CODE) === aCaseOwnersIdDF003("CODE"), "left_outer").drop("CODE")
     threeReportDF.show(3, truncate=false)
-//    +---------+-------------+-----------+
-//    |O1X01CODE|O1X02ID      |O1X03SCHEMA|
-//    +---------+-------------+-----------+
-//    |1        |1801101501001|1          |
-//      +---------+-------------+-----------+
+//    +---------+----------+-------+
+//    |O1X01CODE|O1X02STAMP|O1X03ID|
+//    +---------+----------+-------+
+//    |1        |1801101701|1001   |
+//      +---------+----------+-------+
 
-    // TODO 4: CASE_OWNERS.DESCRIPTION
-    val aCaseOwnersDescriptionQRY004 = "(select 'Denis - wifi troyka matching' as DESCRIPTION, 1 as CODE) dual"
-    val aCaseOwnersDescriptionDF004 = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
-      aCaseOwnersDescriptionQRY004, sources.alts(X.EDWEX).how)
+    // TODO 4: CASE_OWNERS.SCHEMA
+    val aCaseOwnersSchemaQRY004 = "(select 1 as SCHEMA, 1 as CODE) dual"
+    val aCaseOwnersSchemaDF004 = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
+      aCaseOwnersSchemaQRY004, sources.alts(X.EDWEX).how)
 
-    val fourReportDF = threeReportDF.join(aCaseOwnersDescriptionDF004.select('DESCRIPTION as ""+REPORT.O1X04DESCRIPTION, 'CODE),
-      threeReportDF(""+REPORT.O1X01CODE) === aCaseOwnersDescriptionDF004("CODE")).drop("CODE")
+    val fourReportDF = threeReportDF.join(aCaseOwnersSchemaDF004.select('SCHEMA as ""+REPORT.O1X04SCHEMA, 'CODE),
+      threeReportDF(""+REPORT.O1X01CODE) === aCaseOwnersSchemaDF004("CODE"), "left_outer").drop("CODE")
     fourReportDF.show(3, truncate=false)
-//    +---------+-------------+-----------+----------------------------+
-//    |O1X01CODE|O1X02ID      |O1X03SCHEMA|O1X04DESCRIPTION            |
-//    +---------+-------------+-----------+----------------------------+
-//    |1        |1801101501001|1          |Denis - wifi troyka matching|
-//      +---------+-------------+-----------+----------------------------+
+//    +---------+----------+-------+-----------+
+//    |O1X01CODE|O1X02STAMP|O1X03ID|O1X04SCHEMA|
+//    +---------+----------+-------+-----------+
+//    |1        |1801101701|1001   |1          |
+//      +---------+----------+-------+-----------+
 
-    val report = sources.frames + (X.O1_CASE_OWNERS -> My(fourReportDF.select(col(""+REPORT.O1X01CODE) as "CODE",
-      col(""+REPORT.O1X02ID) as "ID", col(""+REPORT.O1X03SCHEMA) as "SCHEMA",
-      col(""+REPORT.O1X04DESCRIPTION) as "DESCRIPTION"),
+    // TODO 5: CASE_OWNERS.DESCRIPTION
+    val aCaseOwnersDescriptionQRY005 = "(select 'Denis - wifi troyka matching' as DESCRIPTION, 1 as CODE) dual"
+    val aCaseOwnersDescriptionDF005 = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
+      aCaseOwnersDescriptionQRY005, sources.alts(X.EDWEX).how)
+
+    val fiveReportDF = fourReportDF.join(aCaseOwnersDescriptionDF005.select('DESCRIPTION as ""+REPORT.O1X05DESCRIPTION, 'CODE),
+      fourReportDF(""+REPORT.O1X01CODE) === aCaseOwnersDescriptionDF005("CODE"), "left_outer").drop("CODE")
+    fiveReportDF.show(3, truncate=false)
+//    +---------+----------+-------+-----------+----------------------------+
+//    |O1X01CODE|O1X02STAMP|O1X03ID|O1X04SCHEMA|O1X05DESCRIPTION            |
+//    +---------+----------+-------+-----------+----------------------------+
+//    |1        |1801101701|1001   |1          |Denis - wifi troyka matching|
+//      +---------+----------+-------+-----------+----------------------------+
+
+    val report = sources.frames + (X.O1_CASE_OWNERS -> My(fiveReportDF.select(col(""+REPORT.O1X01CODE) as "CODE",
+      col(""+REPORT.O1X02STAMP) as "STAMP", col(""+REPORT.O1X03ID) as "ID", col(""+REPORT.O1X04SCHEMA) as "SCHEMA",
+      col(""+REPORT.O1X05DESCRIPTION) as "DESCRIPTION"),
       sources.frames(X.EDWEX).edw.filter('_c0 === "-1")))
 
     val res = M(report.map { case (k, v) => if(k != X.O1_CASE_OWNERS) (k,v) else (k, cache(spark, v.dat, v.edw)) },
@@ -390,6 +406,39 @@ object X0Demo extends Serializable {
   }
 
   def etlO2CaseRecords(spark: SparkSession, conn: Connection, sources: M): M = {
+    import org.apache.spark.sql.functions._
+    import spark.implicits._
+
+    // TODO 6: ***CASE_RECORDS.ID
+    val aCaseRecordsIdQRY006 = "(select (select max(STAMP) from v001_o1_case_owners where schema = 1)" +
+      " * 1000000 + generate_series as ID from generate_series(1000001, 9999999)) dual"
+    val aCaseRecordsIdDF006 = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
+      aCaseRecordsIdQRY006, sources.alts(X.EDWEX).how)
+
+    val sixReportDF = aCaseRecordsIdDF006.select('ID as ""+REPORT.O2X06ID)
+    sixReportDF.show(3, truncate=false)
+    //
+    //
+    //
+    //
+    //
+
+    // TODO 7: CASE_RECORDS.OWNERS_SCHEMA
+    val aCaseRecordsOwnersSchemaQRY007 = "(select 1 as OWNERS_SCHEMA," +
+      " (select max(STAMP) from v001_o1_case_owners where schema = 1)" +
+      " * 1000000 + generate_series as ID from generate_series(1000001, 9999999)) dual"
+    val aCaseRecordsOwnersSchemaDF007 = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
+      aCaseRecordsOwnersSchemaQRY007, sources.alts(X.EDWEX).how)
+
+    val sevenReportDF = sixReportDF.join(aCaseRecordsOwnersSchemaDF007.select('ID, 'OWNERS_SCHEMA),
+      sixReportDF(""+REPORT.O2X06ID) === aCaseRecordsOwnersSchemaDF007("ID"), "left_outer").drop("ID")
+    sevenReportDF.show(3, truncate=false)
+    //
+    //
+    //
+    //
+    //
+
     M(sources.frames + (X.O2_CASE_RECORDS -> sources.frames(X.T11_YANDEX_TRANSFER_CODES)), sources.alts)
   }
 
