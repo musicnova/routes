@@ -19,7 +19,7 @@ object X0Demo extends Serializable {
 
   object X extends Enumeration {
     type XType = Value
-    val EDWEX, ITASK, T1_METRO_GEO2, T2_MAXIMA, T3_DATA_LINE_CODES, T4_DATA_STATION_CODES,
+    val EDWEX, FTASK, T1_METRO_GEO2, T2_MAXIMA, T3_DATA_LINE_CODES, T4_DATA_STATION_CODES,
     T5_DATA_ENTRANCE_STATION_CODES, T6_DATA_PARKING_CODES,
     T7_YANDEX_LABEL_CODES, T8_YANDEX_LINE_CODES, T9_YANDEX_STATION_CODES,
     T10_YANDEX_LINK_CODES, T11_YANDEX_TRANSFER_CODES,
@@ -71,7 +71,7 @@ object X0Demo extends Serializable {
       )
       val zeroITaskDF = spark.createDataFrame(spark.read.format("com.databricks.spark.csv")
         .option("header", "true").option("delimiter", "\t")
-        .load(Paths.get("/home/user/", "CODE", "itask.csv").toString).rdd, zeroITaskSchema)
+        .load(Paths.get("/home/user/", "CODE", "ftask.csv").toString).rdd, zeroITaskSchema)
       zeroITaskDF.show(3, truncate = false)
 //      |N  |LOGIC |NAME               |LEVEL|SRC_FIELD|SRC_SYSTEM |SRC_LOAD|SRC_TABLE|KHD_TABLE|REGION|COMMENT|
 //      +---+------+-------------------+-----+---------+-----------+--------+---------+---------+------+-------+
@@ -233,7 +233,7 @@ object X0Demo extends Serializable {
         elevenYandexTransferCodesSchema)
       elevenYandexTransferCodesDF.show(3, truncate = false)
       val src = Map(X.EDWEX -> My(baseEdwexDF, baseEdwexDF),
-        X.ITASK -> My(zeroITaskDF, baseEdwexDF.filter('_c0 === "0")),
+        X.FTASK -> My(zeroITaskDF, baseEdwexDF.filter('_c0 === "0")),
         X.T1_METRO_GEO2 -> My(oneMetroGeoDF, baseEdwexDF.filter('_c0 === "1")),
         X.T2_MAXIMA -> My(twoMaximaDF, baseEdwexDF.filter('_c0 === "2")),
         X.T3_DATA_LINE_CODES -> My(threeDataLineCodesDF, baseEdwexDF.filter('_c0 === "3")),
@@ -267,7 +267,7 @@ object X0Demo extends Serializable {
   def parse(spark: SparkSession, conn: Connection, sources: M): M = {
     val res = M(sources.frames.map { case (k, v) => if(k == X.EDWEX) (k,v) else (k, cache(spark, v.dat, v.edw)) },
       sources.alts)
-    exportResult(spark, Seq(X.ITASK, X.T1_METRO_GEO2, X.T2_MAXIMA, X.T3_DATA_LINE_CODES, X.T4_DATA_STATION_CODES,
+    exportResult(spark, Seq(X.FTASK, X.T1_METRO_GEO2, X.T2_MAXIMA, X.T3_DATA_LINE_CODES, X.T4_DATA_STATION_CODES,
       X.T5_DATA_ENTRANCE_STATION_CODES, X.T6_DATA_PARKING_CODES, X.T7_YANDEX_LABEL_CODES,
       X.T8_YANDEX_LINE_CODES, X.T9_YANDEX_STATION_CODES, X.T10_YANDEX_LINK_CODES,
       X.T11_YANDEX_TRANSFER_CODES), res.frames)
@@ -314,38 +314,49 @@ object X0Demo extends Serializable {
     o6
   }
 
-  //  CaseOwnersCode:
-//    EXAMPLE = 1
-//  BYCICLES_WIFI_MATCH = 2
-//  TROYKA_WIFI_MATCH = 3
-//
-//  CaseOwnersSchema:
-//    DEFAULT_METRO_TRANSFERS_ENTRANCES = 1
-//
-//  CaseGraphsLinkType:
-//    METRO = 1
-//  TRANSFER = 2
-//  ENTRANCE = 3
-//
-//  CaseGraphsColor:
-//    UNKNOWN = 0
-//  HFF0000 = 1
-//  H00FF00 = 2
-//  H0000FF = 3
-//
-//  CaseStatsResourceType:
-//    DEMO = 1
-//  YANDEX_API = 2
-//
-//  ​CaseRecordsType:
-//    STATION = 1
-//  EXIT = 2
-//  ENTRANCE = 3
-
   object REPORT extends Enumeration {
     type ReportType = Value
     val O1X01CODE, O1X02STAMP, O1X03ID, O1X04SCHEMA, O1X05DESCRIPTION,
     O2X06ID, O2X07OWNERS_SCHEMA, O2X08TYPE, O2X09EN_DOOR_CODE = Value
+  }
+
+  object CaseOwnersCode {
+    val TROYKA_WIFI_MATCH = 1
+    val PARKING_WIFI_MATCH = 2
+    val EXAMPLE = 3
+  }
+
+  object CaseOwnersSchema {
+    val METROS_TRANSFERS_ENTRANCES = 1
+    val CAMERAS_CROSSROADS_PARKINGS = 2
+  }
+
+  object CaseRecordsType {
+    val STATION = 1
+    val EXIT = 2
+    val ENTRANCE = 3
+    val CAMERA = 4
+    val CROSSROAD = 5
+    val PARKINGS = 6
+  }
+
+  object CaseGraphsLinkType {
+    val MOVEMETRO = 1
+    val TRANSMETRO = 2
+    val ENTERMETRO = 3
+    val MOVECAR = 4
+  }
+
+  object CaseGraphsColor {
+    val UNKNOWN = 0
+    val HFF0000 = 1
+    val H00FF00 = 2
+    val H0000FF = 3
+  }
+
+  object CaseStatsResourceType {
+    val DEMO = 1
+    val YANDEX_API = 2
   }
 
   def etlO1CaseOwners(spark: SparkSession, conn: Connection, sources: M): M = {
@@ -353,12 +364,14 @@ object X0Demo extends Serializable {
     import spark.implicits._
 
     // TODO 1: ***CASE_OWNERS.CODE
-    val aCaseOwnersCodeQRY001 = "(select 1 as CODE) dual"
+    val aCaseOwnersCodeQRY001 = "(select " + CaseOwnersCode.TROYKA_WIFI_MATCH + " as CODE) dual"
     val aCaseOwnersCodeDF001 = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
       aCaseOwnersCodeQRY001, sources.alts(X.EDWEX).how)
+    println(aCaseOwnersCodeQRY001)
 
     val oneReportDF = aCaseOwnersCodeDF001.select('CODE as ""+REPORT.O1X01CODE)
     oneReportDF.show(3, truncate=false)
+    //    (select 1 as CODE) dual
 //    +---------+
 //    |O1X01CODE|
 //    +---------+
@@ -367,13 +380,15 @@ object X0Demo extends Serializable {
 
     // TODO 2: CASE_OWNERS.STAMP
     // https://stackoverflow.com/questions/7415077/date-in-mmm-yyyy-format-in-postgresql
-    val aCaseOwnersStampQRY002 = "(select CAST(TO_CHAR(NOW(), 'YYMMDDHH24MI') as bigint) as STAMP, 1 as CODE) dual"
+    val aCaseOwnersStampQRY002 = "(select CAST(TO_CHAR(NOW(), 'YYMMDDHH24MI') as bigint) * 100 + " + CaseOwnersCode.TROYKA_WIFI_MATCH + " as STAMP, " + CaseOwnersCode.TROYKA_WIFI_MATCH + " as CODE) dual"
     val aCaseOwnersStampDF002 = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
       aCaseOwnersStampQRY002, sources.alts(X.EDWEX).how)
+    println(aCaseOwnersStampQRY002)
 
     val twoReportDF = oneReportDF.join(aCaseOwnersStampDF002.select('STAMP as ""+REPORT.O1X02STAMP, 'CODE),
       oneReportDF(""+REPORT.O1X01CODE) === aCaseOwnersStampDF002("CODE"), "left_outer").drop("CODE")
     twoReportDF.show(3, truncate=false)
+    // (select CAST(TO_CHAR(NOW(), 'YYMMDDHH24MI') as bigint) * 100 + 1 as STAMP, 1 as CODE) dual
 //    +---------+----------+
 //    |O1X01CODE|O1X02STAMP|
 //    +---------+----------+
@@ -382,13 +397,15 @@ object X0Demo extends Serializable {
 
     // TODO 3: CASE_OWNERS.ID
     // https://stackoverflow.com/questions/7415077/date-in-mmm-yyyy-format-in-postgresql
-    val aCaseOwnersIdQRY003 = "(select 1001 as ID, 1 as CODE) dual"
+    val aCaseOwnersIdQRY003 = "(select 1000 + " + CaseOwnersCode.TROYKA_WIFI_MATCH + " as ID, " + CaseOwnersCode.TROYKA_WIFI_MATCH + " as CODE) dual"
     val aCaseOwnersIdDF003 = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
       aCaseOwnersIdQRY003, sources.alts(X.EDWEX).how)
+    println(aCaseOwnersIdQRY003)
 
     val threeReportDF = twoReportDF.join(aCaseOwnersIdDF003.select('ID as ""+REPORT.O1X03ID, 'CODE),
       twoReportDF(""+REPORT.O1X01CODE) === aCaseOwnersIdDF003("CODE"), "left_outer").drop("CODE")
     threeReportDF.show(3, truncate=false)
+    // (select 1000 + 1 as ID, 1 as CODE) dual
 //    +---------+----------+-------+
 //    |O1X01CODE|O1X02STAMP|O1X03ID|
 //    +---------+----------+-------+
@@ -396,13 +413,15 @@ object X0Demo extends Serializable {
 //      +---------+----------+-------+
 
     // TODO 4: CASE_OWNERS.SCHEMA
-    val aCaseOwnersSchemaQRY004 = "(select 1 as SCHEMA, 1 as CODE) dual"
+    val aCaseOwnersSchemaQRY004 = "(select " + CaseOwnersSchema.METROS_TRANSFERS_ENTRANCES + " as SCHEMA, " + CaseOwnersCode.TROYKA_WIFI_MATCH + " as CODE) dual"
     val aCaseOwnersSchemaDF004 = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
       aCaseOwnersSchemaQRY004, sources.alts(X.EDWEX).how)
+    println(aCaseOwnersSchemaQRY004)
 
     val fourReportDF = threeReportDF.join(aCaseOwnersSchemaDF004.select('SCHEMA as ""+REPORT.O1X04SCHEMA, 'CODE),
       threeReportDF(""+REPORT.O1X01CODE) === aCaseOwnersSchemaDF004("CODE"), "left_outer").drop("CODE")
     fourReportDF.show(3, truncate=false)
+    // (select 1 as SCHEMA, 1 as CODE) dual
 //    +---------+----------+-------+-----------+
 //    |O1X01CODE|O1X02STAMP|O1X03ID|O1X04SCHEMA|
 //    +---------+----------+-------+-----------+
@@ -410,13 +429,16 @@ object X0Demo extends Serializable {
 //      +---------+----------+-------+-----------+
 
     // TODO 5: CASE_OWNERS.DESCRIPTION
-    val aCaseOwnersDescriptionQRY005 = "(select 'Denis - wifi troyka matching' as DESCRIPTION, 1 as CODE) dual"
+    val aCaseOwnersDescriptionQRY005 = "(select 'Denis - wifi troyka matching' as DESCRIPTION, " + CaseOwnersCode.TROYKA_WIFI_MATCH + " as CODE) dual"
     val aCaseOwnersDescriptionDF005 = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
       aCaseOwnersDescriptionQRY005, sources.alts(X.EDWEX).how)
+    println(aCaseOwnersDescriptionQRY005)
 
     val fiveReportDF = fourReportDF.join(aCaseOwnersDescriptionDF005.select('DESCRIPTION as ""+REPORT.O1X05DESCRIPTION, 'CODE),
       fourReportDF(""+REPORT.O1X01CODE) === aCaseOwnersDescriptionDF005("CODE"), "left_outer").drop("CODE")
     fiveReportDF.show(3, truncate=false)
+
+    // (select 'Denis - wifi troyka matching' as DESCRIPTION, 1 as CODE) dual
 //    +---------+----------+-------+-----------+----------------------------+
 //    |O1X01CODE|O1X02STAMP|O1X03ID|O1X04SCHEMA|O1X05DESCRIPTION            |
 //    +---------+----------+-------+-----------+----------------------------+
@@ -438,13 +460,15 @@ object X0Demo extends Serializable {
     import spark.implicits._
 
     // TODO 6: ***CASE_RECORDS.ID
-    val aCaseRecordsIdQRY006 = "(select (select max(STAMP) from v001_o1_case_owners where schema = 1)" +
+    val aCaseRecordsIdQRY006 = "(select (select max(STAMP) from v001_o1_case_owners where schema = " + CaseOwnersSchema.METROS_TRANSFERS_ENTRANCES + ")" +
       " * 1000000 + generate_series as ID from generate_series(1000000, 9999999)) dual"
     val aCaseRecordsIdDF006 = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
       aCaseRecordsIdQRY006, sources.alts(X.EDWEX).how)
+    println(aCaseRecordsIdQRY006)
 
     val sixReportDF = aCaseRecordsIdDF006.select('ID as ""+REPORT.O2X06ID)
     sixReportDF.show(3, truncate=false)
+    // (select (select max(STAMP) from v001_o1_case_owners where schema = 1) * 1000000 + generate_series as ID from generate_series(1000000, 9999999)) dual
 //    |O2X06ID         |
 //    +----------------+
 //    |1801101806000001|
@@ -452,15 +476,17 @@ object X0Demo extends Serializable {
 //      |1801101806000003|
 
     // TODO 7: CASE_RECORDS.OWNERS_SCHEMA
-    val aCaseRecordsOwnersSchemaQRY007 = "(select 1 as OWNERS_SCHEMA," +
-      " (select max(STAMP) from v001_o1_case_owners where schema = 1)" +
+    val aCaseRecordsOwnersSchemaQRY007 = "(select " + CaseOwnersSchema.METROS_TRANSFERS_ENTRANCES + " as OWNERS_SCHEMA," +
+      " (select max(STAMP) from v001_o1_case_owners where schema = " + CaseOwnersSchema.METROS_TRANSFERS_ENTRANCES + ")" +
       " * 1000000 + generate_series as ID from generate_series(1000000, 9999999)) dual"
     val aCaseRecordsOwnersSchemaDF007 = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
       aCaseRecordsOwnersSchemaQRY007, sources.alts(X.EDWEX).how)
+    println(aCaseRecordsOwnersSchemaQRY007)
 
     val sevenReportDF = sixReportDF.join(aCaseRecordsOwnersSchemaDF007.select('ID, 'OWNERS_SCHEMA as ""+REPORT.O2X07OWNERS_SCHEMA),
       sixReportDF(""+REPORT.O2X06ID) === aCaseRecordsOwnersSchemaDF007("ID"), "left_outer").drop("ID")
     sevenReportDF.show(3, truncate=false)
+    // (select 1 as OWNERS_SCHEMA, (select max(STAMP) from v001_o1_case_owners where schema = 1) * 1000000 + generate_series as ID from generate_series(1000000, 9999999)) dual
 //    |O2X06ID         |O2X07OWNERS_SCHEMA|
 //    +----------------+------------------+
 //    |1801101940000546|1                 |
@@ -468,17 +494,19 @@ object X0Demo extends Serializable {
 //      |1801101940000711|1                 |
 
     // TODO 8: CASE_RECORDS.TYPE
-    val aCaseRecordsTypeQRY008 = "(select 1 as TYPE, (select max(STAMP) from v001_o1_case_owners where schema = 1)" +
+    val aCaseRecordsTypeQRY008 = "(select " + CaseRecordsType.STATION + " as TYPE, (select max(STAMP) from v001_o1_case_owners where schema = " + CaseOwnersSchema.METROS_TRANSFERS_ENTRANCES + ")" +
       " * 1000000 + generate_series as ID from generate_series(1000000, 4999999)" +
-      " union all select 3 as TYPE, (select max(STAMP) from v001_o1_case_owners where schema = 1)" +
+      " union all select " + CaseRecordsType.ENTRANCE + " as TYPE, (select max(STAMP) from v001_o1_case_owners where schema = " + CaseOwnersSchema.METROS_TRANSFERS_ENTRANCES + ")" +
       " * 1000000 + generate_series as ID from generate_series(5000000, 9999999)) dual"
     val aCaseRecordsTypeDF008 = spark.read.jdbc(sources.alts(X.EDWEX).how.getProperty("url"),
       aCaseRecordsTypeQRY008, sources.alts(X.EDWEX).how)
+    println(aCaseRecordsTypeQRY008)
 
     val eightReportDF = sevenReportDF.join(aCaseRecordsTypeDF008.select('ID, 'TYPE as ""+REPORT.O2X08TYPE),
       sevenReportDF(""+REPORT.O2X06ID) === aCaseRecordsTypeDF008("ID"), "left_outer").drop("ID")
     eightReportDF.show(3, truncate=false)
-//    |O2X06ID         |O2X07OWNERS_SCHEMA|O2X08TYPE|
+    // (select 1 as TYPE, (select max(STAMP) from v001_o1_case_owners where schema = 1) * 1000000 + generate_series as ID from generate_series(1000000, 4999999) union all select 3 as TYPE, (select max(STAMP) from v001_o1_case_owners where schema = 1) * 1000000 + generate_series as ID from generate_series(5000000, 9999999)) dual
+    //    |O2X06ID         |O2X07OWNERS_SCHEMA|O2X08TYPE|
 //    +----------------+------------------+---------+
 //    |1801101940000546|1                 |1        |
 //      |1801101940000643|1                 |1        |
@@ -820,7 +848,7 @@ object X0Demo extends Serializable {
 
     val eSeq = Seq(X.EDWEX)
 
-    val tSeq = Seq(X.ITASK, X.T1_METRO_GEO2, X.T2_MAXIMA, X.T3_DATA_LINE_CODES, X.T4_DATA_STATION_CODES,
+    val tSeq = Seq(X.FTASK, X.T1_METRO_GEO2, X.T2_MAXIMA, X.T3_DATA_LINE_CODES, X.T4_DATA_STATION_CODES,
       X.T5_DATA_ENTRANCE_STATION_CODES, X.T6_DATA_PARKING_CODES, X.T7_YANDEX_LABEL_CODES,
       X.T8_YANDEX_LINE_CODES, X.T9_YANDEX_STATION_CODES, X.T10_YANDEX_LINK_CODES, X.T11_YANDEX_TRANSFER_CODES)
 
