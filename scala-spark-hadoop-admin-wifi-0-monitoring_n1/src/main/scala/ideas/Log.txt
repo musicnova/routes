@@ -1,0 +1,47 @@
+# 0 0 6 * * ?
+
+import org.apache.spark._;
+import org.apache.spark.sql._;
+import spark.implicits._;
+import org.apache.spark.sql.functions._;
+import org.apache.spark.sql.expressions.Window;
+import org.apache.spark.sql.types._;
+
+
+
+import java.text.SimpleDateFormat
+val myFormat = new SimpleDateFormat("yyyy-MM-dd")
+val cur = myFormat.format(new java.util.Date())
+val dfTest = spark.sqlContext.sql("SELECT '" + cur + "' as ts")
+// hiveContext.sql("drop table if exists sandbox.yurbasov_nightly_wifi")
+// dfTest.write.saveAsTable("sandbox.yurbasov_nightly_wifi")
+
+
+
+val hiveContext = new org.apache.spark.sql.hive.HiveContext(sc)
+val dfMaximaMetro = hiveContext.read.table("maxima_data.metro")
+val dfMetroEntries = hiveContext.read.table("metro_data.entries")
+val dfCoddCodd = hiveContext.read.table("codd_data.codd")
+val dfResult1 = dfMaximaMetro.select('fdt cast StringType, lit(1) as "total",
+      lit("maxima_data.metro") as "what")
+      .select(unix_timestamp('fdt cast StringType, "yyyy-MM-dd") cast TimestampType as "when",
+        'total, 'what).groupBy('when, 'what).agg(sum("total").as("total"))
+      .withColumn("stamp", unix_timestamp(lit(cur), "yyyy-MM-dd") cast TimestampType)
+val dfResult2 = dfMetroEntries.select('point_time cast StringType, lit(1) as "total",
+      lit("metro_data.entries") as "what")
+      .select(unix_timestamp('point_time cast StringType, "yyyy-MM-dd") cast TimestampType as "when",
+        'total, 'what).groupBy('when, 'what).agg(sum("total").as("total"))
+      .withColumn("stamp", unix_timestamp(lit(cur), "yyyy-MM-dd") cast TimestampType)
+val dfResult3 = dfCoddCodd.select('v_time_check cast StringType, lit(1) as "total",
+      lit("codd_data.codd") as "what")
+      .select(unix_timestamp('v_time_check cast StringType, "yyyy-MM-dd") cast TimestampType as "when",
+        'total, 'what).groupBy('when, 'what).agg(sum("total").as("total"))
+      .withColumn("stamp", unix_timestamp(lit(cur), "yyyy-MM-dd") cast TimestampType)
+
+
+
+val dfResult = dfResult1.union(dfResult2).union(dfResult3)
+hiveContext.sql("drop table if exists sandbox.yurbasov_nightly_count")
+dfResult.write.saveAsTable("sandbox.yurbasov_nightly_count")
+
+

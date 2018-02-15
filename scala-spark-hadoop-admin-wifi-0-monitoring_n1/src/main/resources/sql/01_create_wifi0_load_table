@@ -1,0 +1,14 @@
+
+CREATE TYPE   wifi0_load_step_name_type AS ENUM ('1d');
+CREATE TYPE   wifi0_load_what_type AS ENUM ('maxima_data.metro', 'metro_data.entries', 'codd_data.codd');
+
+CREATE SEQUENCE wifi0_load_id_seq;
+CREATE TABLE wifi0_load (
+id integer NOT NULL DEFAULT nextval('wifi0_load_id_seq'),
+  step_type integer NOT NULL,
+    what integer NOT NULL,
+      ts bigint NOT NULL,
+        total bigint NOT NULL,
+          stamp bigint NOT NULL,
+            trash integer NOT NULL,
+              deleted bigint NOT NULL);

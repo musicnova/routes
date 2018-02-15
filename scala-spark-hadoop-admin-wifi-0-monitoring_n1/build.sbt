@@ -8,9 +8,12 @@ lazy val general = Seq(
 )
 
 lazy val dependencies = Seq(
-  sparkCore % "provided",
-  sparkSql % "provided",
-  hadoopClient % "provided",
+  sparkCore,// % "provided",
+  sparkSql,// % "provided",
+  slick,
+  slickHikaricp,
+  postgreSql,
+  hadoopClient,// % "provided",
   configurator
 )
 

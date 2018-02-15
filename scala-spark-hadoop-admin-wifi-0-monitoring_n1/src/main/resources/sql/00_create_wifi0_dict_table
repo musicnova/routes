@@ -1,0 +1,10 @@
+
+CREATE TYPE   wifi0_dict_object_name_type AS ENUM ('TABLE_NAME');
+
+CREATE SEQUENCE wifi0_dict_id_seq;
+CREATE TABLE wifi0_dict (
+id integer NOT NULL DEFAULT nextval('wifi0_dict_id_seq'),
+  object_type integer NOT NULL,
+    key char(200)  NOT NULL,
+      value char(200)  NOT NULL,
+        deleted bigint NOT NULL);

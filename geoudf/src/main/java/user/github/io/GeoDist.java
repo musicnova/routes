@@ -7,7 +7,9 @@ import java.sql.SQLException;
 * http://wiki.gis-lab.info/w/Вычисление_расстояния_и_начального_азимута_между_двумя_точками_на_сфере
 
 */
-// расстояние выводится в метрах
+// https://community.hortonworks.com/articles/24531/geo-distance-calculations-in-hive-and-java.html
+// https://community.hortonworks.com/articles/138964/how-to-use-udfs-to-run-hive-queries-in-ambari-hive.html
+// расстояние выводится в метрах 
 // Distance_A_B = .Atan2(Sin(.Pi() * Lat1 / 180) * Sin(.Pi() * Lat2 / 180) + Cos(.Pi() * Lat1 / 180) * Cos(.Pi() * Lat2 / 180) * Cos(Abs(.Pi() * Long2 / 180 - .Pi() * Long1 / 180)), _
 //         ((Cos(.Pi() * Lat2 / 180) * Sin(.Pi() * Long2 / 180 - .Pi() * Long1 / 180)) ^ 2 + (Cos(.Pi() * Lat1 / 180) * Sin(.Pi() * Lat2 / 180) - Sin(.Pi() * Lat1 / 180) * Cos(.Pi() * Lat2 / 180) * Cos(Abs(.Pi() * Long2 / 180 - .Pi() * Long1 / 180))) ^ 2) ^ 0.5) * 6372795
 
