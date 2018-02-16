@@ -87,21 +87,21 @@ object Main extends Serializable {
 
 
     // val dfResult = empty
-    val dfResult1 = dfMaximaMetro.select('fdt cast StringType, lit(1) as "total",
-      lit("maxima_data.metro") as "what")
-      .select(unix_timestamp('fdt cast StringType, "yyyy-MM-dd") cast TimestampType as "when",
-        'total, 'what).groupBy('when, 'what).agg(sum("total").as("total"))
-      .withColumn("stamp", unix_timestamp(lit(cur), "yyyy-MM-dd") cast TimestampType)
-    val dfResult2 = dfMetroEntries.select('point_time cast StringType, lit(1) as "total",
-      lit("metro_data.entries") as "what")
-      .select(unix_timestamp('point_time cast StringType, "yyyy-MM-dd") cast TimestampType as "when",
-        'total, 'what).groupBy('when, 'what).agg(sum("total").as("total"))
-      .withColumn("stamp", unix_timestamp(lit(cur), "yyyy-MM-dd") cast TimestampType)
-    val dfResult3 = dfCoddCodd.select('v_time_check cast StringType, lit(1) as "total",
-      lit("codd_data.codd") as "what")
-      .select(unix_timestamp('v_time_check cast StringType, "yyyy-MM-dd") cast TimestampType as "when",
-        'total, 'what).groupBy('when, 'what).agg(sum("total").as("total"))
-      .withColumn("stamp", unix_timestamp(lit(cur), "yyyy-MM-dd") cast TimestampType)
+    val dfResult1 = dfMaximaMetro.select('fdt cast StringType, lit(1) as "v_total",
+      lit("maxima_data.metro") as "v_what")
+      .select(unix_timestamp('fdt cast StringType, "yyyy-MM-dd") cast TimestampType as "v_when",
+        'v_total, 'v_what).groupBy('v_when, 'v_what).agg(sum("v_total").as("v_total"))
+      .withColumn("v_stamp", unix_timestamp(lit(cur), "yyyy-MM-dd") cast TimestampType)
+    val dfResult2 = dfMetroEntries.select('point_time cast StringType, lit(1) as "v_total",
+      lit("metro_data.entries") as "v_what")
+      .select(unix_timestamp('point_time cast StringType, "yyyy-MM-dd") cast TimestampType as "v_when",
+        'v_total, 'v_what).groupBy('v_when, 'v_what).agg(sum("v_total").as("v_total"))
+      .withColumn("v_stamp", unix_timestamp(lit(cur), "yyyy-MM-dd") cast TimestampType)
+    val dfResult3 = dfCoddCodd.select('v_time_check cast StringType, lit(1) as "v_total",
+      lit("codd_data.codd") as "v_what")
+      .select(unix_timestamp('v_time_check cast StringType, "yyyy-MM-dd") cast TimestampType as "v_when",
+        'v_total, 'v_what).groupBy('v_when, 'v_what).agg(sum("v_total").as("v_total"))
+      .withColumn("v_stamp", unix_timestamp(lit(cur), "yyyy-MM-dd") cast TimestampType)
 
 
     val dfResult = dfResult1.union(dfResult2).union(dfResult3)

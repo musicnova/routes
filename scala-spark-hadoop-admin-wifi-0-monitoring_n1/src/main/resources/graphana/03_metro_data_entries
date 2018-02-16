@@ -1,0 +1,8 @@
+# METRO_DATA.ENTRIES Monitor [формула=log2(count+1)]
+SELECT
+  x as time,
+  y2 as values,
+  CAST(v_what AS VARCHAR) as metric
+FROM wifi0_view
+  WHERE v_what = 29
+ORDER BY time ASC

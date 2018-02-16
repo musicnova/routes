@@ -1,0 +1,4 @@
+CREATE VIEW wifi0_view
+  AS SELECT v_what, v_when as x, v_total as y, log(2.0, v_total + 1) as y2
+   FROM wifi0_load WHERE v_trash = 0
+    AND v_stamp = CAST( TO_CHAR(NOW(),'YYYYmmdd') as integer) - 1
