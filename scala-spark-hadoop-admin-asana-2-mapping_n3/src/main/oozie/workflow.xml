@@ -1,0 +1,49 @@
+<workflow-app name="admin-ASANA-2-mapping_n3" xmlns="uri:oozie:workflow:0.5">
+
+   <global>
+      <configuration>
+         <property>
+            <name>oozie.launcher.mapred.job.queue.name</name>
+            <value>${queue}</value>
+         </property>
+      </configuration>
+   </global>
+
+   <start to="admin-ASANA-2-mapping_n3" />
+
+   <action name="admin-ASANA-2-mapping_n3">
+      <spark xmlns="uri:oozie:spark-action:0.1">
+         <job-tracker>${jobTracker}</job-tracker>
+         <name-node>${nameNode}</name-node>
+         <master>yarn-client</master>
+         <name>admin-ASANA-2-mapping_n3</name>
+         <class>ideas.Main</class>
+         <jar>${nameNode}${jobDir}/lib/scala-spark-hadoop-admin-ASANA-2-mapping_n3-1.0.jar</jar>
+         <!-- --driver-memory 4g --num-executors 10 --executor-cores 4 --executor-memory 30g -->
+         <spark-opts>
+            --queue ${queue}
+            --master yarn-client
+            --num-executors 5
+            --conf spark.executor.cores=8
+            --conf spark.executor.memory=10g
+            --conf spark.executor.extraJavaOptions=-XX:+UseG1GC
+            --conf spark.yarn.jars=*.jar
+            --conf spark.yarn.queue=${queue}
+         </spark-opts>
+         <arg>${nameNode}${dataDir}</arg>
+         <arg>${datePartition}</arg>
+         <arg>${nameNode}${saveDir}</arg>
+       </spark>
+
+       <ok to="end" />
+       <error to="fail" />
+
+   </action>
+
+   <kill name="fail">
+      <message>Statistics job failed [${wf:errorMessage(wf:lastErrorNode())}]</message>
+   </kill>
+
+   <end name="end" />
+
+</workflow-app>

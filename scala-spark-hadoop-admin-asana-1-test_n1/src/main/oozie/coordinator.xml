@@ -1,0 +1,13 @@
+<coordinator-app name="admin-asana-1-test_N1-coord" frequency="${frequency}" start="${startTime}" end="${endTime}" timezone="UTC" xmlns="uri:oozie:coordinator:0.1">
+    <action>
+        <workflow>
+            <app-path>${workflowPath}</app-path>
+            <configuration>
+                <property>
+                    <name>datePartition</name>
+                    <value>${coord:formatTime(coord:dateOffset(coord:nominalTime(), -1, 'DAY'), "yyyy/MM/dd")}</value>
+                </property>
+            </configuration>
+        </workflow>
+    </action>
+</coordinator-app>

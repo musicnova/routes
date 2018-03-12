@@ -1,0 +1,134 @@
+# 0 0 6 * * ?
+
+import org.apache.spark._;
+import org.apache.spark.sql._;
+import spark.implicits._;
+import org.apache.spark.sql.functions._;
+import org.apache.spark.sql.expressions.Window;
+import org.apache.spark.sql.types._;
+
+
+
+import org.apache.commons.lang.time.DateUtils
+import java.text.SimpleDateFormat
+val myFormat = new SimpleDateFormat("yyyy-MM-dd")
+val cur = myFormat.format(new java.util.Date())
+val prev = myFormat.format(DateUtils.addDays(new java.util.Date(), -90))
+val dfTest = spark.sqlContext.sql("SELECT '" + cur + "' as ts")
+// hiveContext.sql("drop table if exists sandbox.yurbasov_nightly_wifi")
+// dfTest.write.saveAsTable("sandbox.yurbasov_nightly_wifi")
+
+
+
+val hiveContext = new org.apache.spark.sql.hive.HiveContext(sc)
+val dfSecretRegno = hiveContext.read.table("secret.regno")
+val dfDataParking = hiveContext.read.table("parking_data.parking")
+val dfDataCodd = hiveContext.read.table("codd_data.codd")
+
+    val dfBase1 = dfDataCodd.select('v_regno).where('v_time_check > lit(prev)).filter('v_time_check < lit(cur))
+    val dfPre1 = dfBase1.select('v_regno).groupBy('v_regno).agg(max('v_regno) as "v_regno0")
+    val dfPar1 = dfDataParking.select('phoneno, 'carno, 'parkingstart, lit(1) as "total")
+      .groupBy('phoneno, 'carno)
+      .agg(max('parkingstart) as "max_date", sum('total) as "cty")
+      .select('phoneno, 'carno, 'max_date, 'cty, row_number().over(
+        Window.partitionBy('carno).orderBy(col("cty").desc)).as("rn"))
+      .select('phoneno, 'carno).where('rn === lit(1))
+    val dfExt1 = dfPre1.join(dfSecretRegno, dfPre1.col("v_regno0") === dfSecretRegno.col("regno_hash"), "left_outer")
+        .select('v_regno0, 'regno_hash, 'regno)
+          .groupBy('v_regno0, 'regno_hash, 'regno).agg(max('v_regno0) as "v_regno2",
+      max('regno_hash) as "regno_hash2",
+      max('regno) as "regno2")
+    val dfRes1 = dfExt1.join(dfPar1, dfExt1.col("v_regno2") === dfPar1("carno"), "inner")
+      .filter('carno.isNotNull).select('v_regno2, 'regno, 'phoneno)
+          .groupBy('v_regno2, 'regno, 'phoneno)
+      .agg(max('v_regno2) as "v_regno",
+        max('regno) as "regno",
+        max('phoneno) as "phoneno")
+
+
+
+    val dfResult = dfRes1
+    dfResult.show()
+    hiveContext.sql("drop table if exists sandbox.yurbasov_codd_entity_mapping")
+    dfResult.write.saveAsTable("sandbox.yurbasov_codd_entity_mapping")
+
+
+
+    hiveContext.sql("drop table if exists ic_calc.asana_codd_entity_mapping")
+    dfResult.write.saveAsTable("ic_calc.asana_codd_entity_mapping")
+
+
+
+CREATE TABLE sandbox.yurbasov_coddpark_entity_mapping
+AS WITH base1
+AS (SELECT v_regno
+FROM codd_data.codd codd_kafka
+WHERE (from_unixtime(unix_timestamp(v_time_check, 'dd.MM.yyyy HH:mm:ss'),'yyyy-MM-dd') < '2018-02-28'
+AND from_unixtime(unix_timestamp(v_time_check, 'dd.MM.yyyy HH:mm:ss'),'yyyy-MM-dd') >= '2017-09-01')
+), pre1 AS
+(SELECT
+  v_regno
+FROM base1
+GROUP BY v_regno),
+par1
+AS (SELECT
+  phoneno,
+  carno
+FROM (SELECT
+  phoneno,
+  carno,
+  MAX(from_unixtime(unix_timestamp(parkingstart, 'dd.MM.yyyy HH:mm:ss'), 'yyyy-MM-dd')) AS max_date,
+  COUNT(*) AS qty,
+  ROW_NUMBER() OVER (PARTITION BY carno ORDER BY COUNT(*) DESC) AS rn
+FROM parking_data.parking
+WHERE phoneno != 'NULL'
+AND from_unixtime(unix_timestamp(parkingstart, 'dd.MM.yyyy HH:mm:ss'), 'yyyy-MM-dd') >= '2017-01-01'
+GROUP BY phoneno,
+         carno) xx
+WHERE rn = 1),
+extra1
+AS (
+SELECT
+    pre1.v_regno as v_regno
+    , sec.regno_hash AS regno_hash
+    , sec.regno AS regno
+FROM pre1
+ JOIN secret.regno AS sec ON pre1.v_regno = sec.regno_hash
+ GROUP BY
+ v_regno, regno_hash, regno
+), res1 AS
+(SELECT
+  extra1.v_regno,
+  extra1.regno,
+  par1.phoneno
+FROM extra1
+JOIN par1
+  ON extra1.v_regno = par1.carno
+WHERE par1.carno IS NOT NULL
+GROUP BY
+extra1.v_regno, extra1.regno,
+par1.phoneno) SELECT * FROM res1
+
+
+
+
+
+
+
+
+
+val hiveContext = new org.apache.spark.sql.hive.HiveContext(sc)
+val dfParkPark = hiveContext.read.table("parking_data.parking")
+val dfCoddCodd = hiveContext.read.table("codd_data.codd")
+val dfResult1 = dfParkPark.select('fdt cast StringType, lit(1) as "v_total",
+      lit("parking_data.parking") as "v_what")
+      .select(unix_timestamp('fdt cast StringType, "yyyy-MM-dd") cast TimestampType as "v_when",
+        'v_total, 'v_what).groupBy('v_when, 'v_what).agg(sum("v_total").as("v_total"))
+      .withColumn("parkingstart", unix_timestamp(lit(cur), "yyyy-MM-dd") cast TimestampType)
+val dfResult3 = dfCoddCodd.select('v_time_check cast StringType, lit(1) as "v_total",
+      lit("codd_data.codd") as "v_what")
+      .select(unix_timestamp('v_time_check cast StringType, "yyyy-MM-dd") cast TimestampType as "v_when",
+        'v_total, 'v_what).groupBy('v_when, 'v_what).agg(sum("v_total").as("v_total"))
+      .withColumn("v_stamp", unix_timestamp(lit(cur), "yyyy-MM-dd") cast TimestampType)
+
+
